@@ -1,4 +1,4 @@
-"""Unit tests for Tool 1–3: process_document, get_job_status, get_extraction_result."""
+"""Unit tests for Tool 1–6: process_document, get_job_status, get_extraction_result, build_dataset, search_documents, export_dataset."""
 from __future__ import annotations
 
 import pytest
@@ -9,6 +9,9 @@ from flexorch_mcp.client import FlexOrchMCPClient
 from flexorch_mcp.tools import process as tools_process
 from flexorch_mcp.tools import status as tools_status
 from flexorch_mcp.tools import result as tools_result
+from flexorch_mcp.tools import build as tools_build
+from flexorch_mcp.tools import search as tools_search
+from flexorch_mcp.tools import export as tools_export
 
 _BASE = "https://api.flexorch.com/v1"
 _TEST_KEY = "dfx_testkey_000000000"
@@ -209,3 +212,133 @@ class TestGetExtractionResult:
 
         assert result.get("isError") is True
         assert "FLEXORCH_API_KEY" in result["error"]
+
+
+# ===========================================================================
+# Tool 4: build_dataset
+# ===========================================================================
+
+
+class TestBuildDataset:
+    @pytest.mark.asyncio
+    async def test_returns_job_id_and_poll_hint(self, client, mock_api):
+        result = await tools_build.run(client, 501)
+        assert result["job_id"] == 1004
+        assert result["status"] == "queued"
+        assert "get_job_status(1004)" in result["poll_hint"]
+        assert "export_dataset" in result["poll_hint"]
+
+    @pytest.mark.asyncio
+    async def test_with_name_passes_payload(self, client, mock_api):
+        result = await tools_build.run(client, 501, name="my_dataset")
+        assert result["job_id"] == 1004
+
+    @pytest.mark.asyncio
+    async def test_api_error_returns_error_dict(self, client):
+        with respx.mock(base_url=_BASE, assert_all_called=False) as router:
+            router.post("/datasets/build-from-execution/9999").mock(
+                return_value=httpx.Response(
+                    402,
+                    json={"error": {"code": "QUOTA_EXCEEDED", "message": "Quota exceeded"}},
+                )
+            )
+            result = await tools_build.run(client, 9999)
+
+        assert result.get("isError") is True
+        assert "app.flexorch.com" in result["error"]
+
+
+# ===========================================================================
+# Tool 5: search_documents
+# ===========================================================================
+
+
+class TestSearchDocuments:
+    @pytest.mark.asyncio
+    async def test_returns_results_and_total(self, client, mock_api):
+        result = await tools_search.run(client, "invoice")
+        assert result["total_results"] == 1
+        assert len(result["results"]) == 1
+        assert result["results"][0]["score"] == 0.94
+        assert result["results"][0]["dataset_id"] == 89
+        assert result["query"] == "invoice"
+
+    @pytest.mark.asyncio
+    async def test_empty_query_returns_error(self, client, mock_api):
+        result = await tools_search.run(client, "   ")
+        assert result.get("isError") is True
+        assert "empty" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_invalid_mode_returns_error(self, client, mock_api):
+        result = await tools_search.run(client, "test", mode="magic")
+        assert result.get("isError") is True
+        assert "mode" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_top_k_clamped_to_max(self, client, mock_api):
+        # Should not raise even with out-of-range top_k
+        result = await tools_search.run(client, "invoice", top_k=999)
+        assert "isError" not in result or result.get("isError") is not True
+
+    @pytest.mark.asyncio
+    async def test_plan_upgrade_error_propagates(self, client):
+        with respx.mock(base_url=_BASE, assert_all_called=False) as router:
+            router.post("/search").mock(
+                return_value=httpx.Response(
+                    403,
+                    json={"error": {"code": "PLAN_UPGRADE_REQUIRED", "message": "Pro plan required"}},
+                )
+            )
+            result = await tools_search.run(client, "test query", mode="semantic")
+
+        assert result.get("isError") is True
+        assert "Pro" in result["error"]
+
+
+# ===========================================================================
+# Tool 6: export_dataset
+# ===========================================================================
+
+
+class TestExportDataset:
+    @pytest.mark.asyncio
+    async def test_jsonl_export_returns_content(self, client, mock_api):
+        result = await tools_export.run(client, 89, "jsonl")
+        assert result["dataset_id"] == 89
+        assert result["format"] == "jsonl"
+        assert "FTR-2024-001" in result["content"]
+        assert result["byte_count"] > 0
+        assert result["filename"] == "q1-invoices.jsonl"
+
+    @pytest.mark.asyncio
+    async def test_csv_export_returns_content(self, client, mock_api):
+        result = await tools_export.run(client, 89, "csv")
+        assert "invoice_number" in result["content"]
+        assert result["format"] == "csv"
+
+    @pytest.mark.asyncio
+    async def test_binary_format_returns_error(self, client, mock_api):
+        result = await tools_export.run(client, 89, "parquet")
+        assert result.get("isError") is True
+        assert "binary" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_invalid_format_returns_error(self, client, mock_api):
+        result = await tools_export.run(client, 89, "xlsx")
+        assert result.get("isError") is True
+        assert "Unsupported format" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_api_error_returns_error_dict(self, client):
+        with respx.mock(base_url=_BASE, assert_all_called=False) as router:
+            router.get("/datasets/9999/export/jsonl").mock(
+                return_value=httpx.Response(
+                    404,
+                    json={"error": {"code": "NOT_FOUND", "message": "Dataset not found"}},
+                )
+            )
+            result = await tools_export.run(client, 9999, "jsonl")
+
+        assert result.get("isError") is True
+        assert "not found" in result["error"].lower()

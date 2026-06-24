@@ -232,13 +232,22 @@ def mock_api():
                         "results": [
                             {
                                 "chunk_id": "abc-123",
+                                "dataset_id": 89,
                                 "dataset_name": "q1_invoices",
                                 "score": 0.94,
                                 "text": "Sample invoice text...",
-                                "metadata": {"doc_type": "invoice", "language": "tr", "quality_grade": "A"},
+                                "metadata": {
+                                    "doc_type": "invoice",
+                                    "language": "tr",
+                                    "quality_grade": "A",
+                                    "mode": "structured",
+                                },
                             }
                         ],
-                        "total": 1,
+                        "query": "invoice",
+                        "total_results": 1,
+                        "mode": "structured",
+                        "alpha": None,
                     },
                     "error": None,
                 },
