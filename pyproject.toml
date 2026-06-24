@@ -28,6 +28,14 @@ dependencies = [
     "httpx>=0.27",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    "mypy>=1.10",
+]
+
 [project.scripts]
 flexorch-mcp = "flexorch_mcp.server:main"
 
