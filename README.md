@@ -24,7 +24,7 @@ Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorc
 | `get_extraction_result` | Get structured extracted fields from a completed job |
 | `build_dataset` | Build a structured dataset from a completed execution |
 | `search_documents` | Semantic search across indexed datasets (Pro+) |
-| `export_dataset` | Export a dataset as JSONL, CSV, JSON, XML, XLSX, MD, RAG, or HuggingFace format |
+| `export_dataset` | Export a dataset as JSONL, CSV, JSON, XML, MD, or RAG (LangChain/LlamaIndex chunks) |
 
 ---
 
@@ -97,9 +97,9 @@ Agent:
   1. process_document(file_url="https://...")   → job_id: 1234
   2. get_job_status(1234)                        → completed, execution_id: 567
   3. get_extraction_result(567)                  → vendor, total, date, PII masked
-  4. build_dataset(execution_id=567)             → dataset_id: 89, build_job_id: 1235
-  5. get_job_status(1235)                        → completed
-  6. export_dataset(89, format="jsonl")          → download_url
+  4. build_dataset(execution_id=567)             → job_id: 1235
+  5. get_job_status(1235)                        → completed, dataset_id: 89
+  6. export_dataset(89, format="jsonl")          → inline JSONL content
 ```
 
 ---
