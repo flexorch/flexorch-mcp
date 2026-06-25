@@ -4,6 +4,14 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.2] — 2026-06-25
+
+### Changed
+- Add MCP Registry ownership token to README (required for `registry.modelcontextprotocol.io` listing)
+- Update `server.json` to reference v0.1.2
+
+---
+
 ## [0.1.1] — 2026-06-25
 
 ### Changed
