@@ -1,5 +1,7 @@
 # flexorch-mcp
 
+<!-- mcp-name: io.github.dev-flexorch/flexorch-mcp -->
+
 **MCP server for FlexOrch — SDK for machines.**
 
 Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorch.com) document intelligence pipeline. Process documents, extract structured data, detect PII, and export LLM-ready datasets — all through natural language tool calls.
