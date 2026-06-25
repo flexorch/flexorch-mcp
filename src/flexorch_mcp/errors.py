@@ -4,7 +4,9 @@ FLEXORCH_ERRORS: dict[str, str] = {
     "QUOTA_EXCEEDED": (
         "Credit quota exceeded. Upgrade your FlexOrch plan at app.flexorch.com/settings"
     ),
-    "TRIAL_EXPIRED": "Trial period ended. Activate a plan to continue.",
+    "TRIAL_EXPIRED": (
+        "Trial period ended. Activate a paid plan at app.flexorch.com/settings to continue."
+    ),
     "RATE_LIMIT_EXCEEDED": "Rate limit reached. Retry in {retry_after} seconds.",
     "UNSUPPORTED_FILE": (
         "Unsupported file type. Supported: PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF"
@@ -15,8 +17,19 @@ FLEXORCH_ERRORS: dict[str, str] = {
     "INVALID_API_KEY": (
         "Invalid API key. Check your FLEXORCH_API_KEY environment variable."
     ),
+    "UNAUTHORIZED": (
+        "Authentication failed. Check your FLEXORCH_API_KEY environment variable."
+    ),
     "FILE_TOO_LARGE": "File exceeds size limit. Max 50 MB.",
-    "NOT_FOUND": "Resource not found. Check the provided ID.",
+    "NOT_FOUND": (
+        "Resource not found. Verify the job_id, execution_id, or dataset_id is correct."
+    ),
+    "PROCESSING_FAILED": (
+        "Document processing failed. Check the file format and content, then retry."
+    ),
+    "VALIDATION_ERROR": (
+        "Invalid request parameters. Check the values passed to this tool."
+    ),
 }
 
 _DEFAULT_ERROR = "An error occurred. Visit app.flexorch.com for support."

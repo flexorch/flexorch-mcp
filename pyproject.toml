@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flexorch-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for FlexOrch — SDK for machines"
 readme = "README.md"
 license = { file = "LICENSE" }

@@ -23,8 +23,11 @@ async def run(
     # --- Download ---
     try:
         content, filename = await client.download_file(file_url)
-    except ValueError as exc:
-        return {"isError": True, "error": str(exc)}
+    except ValueError:
+        return {
+            "isError": True,
+            "error": "Invalid file_url. Only http and https URLs are supported.",
+        }
     except DownloadError as exc:
         return {"isError": True, "error": str(exc)}
     except FileTooLargeError:

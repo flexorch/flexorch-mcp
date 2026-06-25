@@ -53,8 +53,8 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
                 "dataset_name": ds.get("name"),
                 "row_count": ds.get("row_count"),
                 "poll_hint": (
-                    f"Dataset is ready. Use export_dataset({ds.get('dataset_id')}, format) to download. "
-                    "Supported formats: jsonl, csv, json, xml, xlsx, md, rag, hf"
+                    f"Dataset is ready. Use export_dataset({ds.get('dataset_id')}, format) to retrieve all records. "
+                    "Text formats via MCP: jsonl, csv, json, xml, md, rag"
                 ),
             }
 

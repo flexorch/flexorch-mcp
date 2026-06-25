@@ -4,6 +4,23 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.1] — 2026-06-25
+
+### Changed
+- Tool descriptions rewritten for Anthropic MCP marketplace quality standards: explicit step numbers (Step 1–5), mandatory polling guidance, parameter constraints, and next-step routing in every docstring
+- Server instructions expanded with numbered workflow steps and async reminder
+- Error messages improved: `TRIAL_EXPIRED` now includes actionable link, `NOT_FOUND` lists all ID types
+- `get_job_status` poll_hint corrected to list only MCP-supported text formats (jsonl/csv/json/xml/md/rag), removing xlsx and hf which are binary-only
+
+### Added
+- Error codes: `UNAUTHORIZED`, `PROCESSING_FAILED`, `VALIDATION_ERROR` added to error map
+- `process_document` ValueError (invalid URL scheme) now returns a user-friendly message instead of the raw exception string
+
+### Fixed
+- `process_document` ValueError message no longer leaks internal exception text
+
+---
+
 ## [0.1.0] — 2026-06-24
 
 ### Added

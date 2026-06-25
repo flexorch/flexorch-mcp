@@ -32,10 +32,15 @@ def _get_client() -> FlexOrchMCPClient:
 mcp = FastMCP(
     "flexorch",
     instructions=(
-        "FlexOrch processes documents through an AI pipeline: "
-        "classify → extract structured fields → detect & mask PII → score quality. "
-        "Typical workflow: process_document → get_job_status (poll) → "
-        "get_extraction_result → build_dataset → export_dataset."
+        "FlexOrch converts unstructured documents (PDF, DOCX, invoices, contracts, payroll, etc.) "
+        "into structured, LLM-ready datasets with PII masking and quality scoring. "
+        "Standard workflow (all steps are async — always poll get_job_status after submitting a job): "
+        "1. process_document(file_url) → returns job_id. "
+        "2. get_job_status(job_id) — poll every 3–5 s until status='completed'. Response includes execution_id. "
+        "3. get_extraction_result(execution_id) — read extracted fields and quality grade. "
+        "4. build_dataset(execution_id) → returns build job_id. Poll get_job_status again. "
+        "5. export_dataset(dataset_id, format) — returns full dataset content as text. "
+        "To search existing datasets without processing a new document: search_documents(query)."
     ),
 )
 
@@ -50,19 +55,22 @@ async def process_document(
     mask_pii: bool = True,
     document_type: str = "auto",
 ) -> dict[str, Any]:
-    """Upload and process a document through the FlexOrch pipeline.
+    """Submit a document for processing — this is always the first step (Step 1 of 5).
 
-    Downloads the document from file_url, then sends it to FlexOrch for
-    classification, structured extraction, PII detection/masking and quality
-    scoring. Returns a job_id — poll with get_job_status until completed.
+    Downloads the file from file_url, then submits it to FlexOrch for automatic
+    classification, structured field extraction, PII detection/masking, and quality
+    scoring. Processing is asynchronous — this tool returns immediately with a
+    job_id. You MUST call get_job_status(job_id) every 3–5 seconds until
+    status='completed' before calling get_extraction_result.
 
     Args:
-        file_url: Publicly accessible URL of the document (http/https only).
-                  Supports PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF.
-        mask_pii: Mask detected PII in output. Default: true.
-        document_type: Classification hint. Auto-detected if omitted.
+        file_url: Publicly accessible URL of the document (http/https only, max 50 MB).
+                  Supported: PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF.
+        mask_pii: Replace detected PII (names, IDs, emails, phone numbers) with
+                  [MASKED_TYPE] placeholders in all output. Default: true.
+        document_type: Optional classification hint — FlexOrch auto-detects if omitted.
                        Values: invoice, expense_report, purchase_order,
-                       sales_proposal, bank_statement, payroll, auto.
+                       sales_proposal, bank_statement, payroll.
     """
     return await tools_process.run(_get_client(), file_url, mask_pii, document_type)
 
@@ -73,9 +81,12 @@ async def process_document(
 
 @mcp.tool()
 async def get_job_status(job_id: int) -> dict[str, Any]:
-    """Check the status of a document processing job.
+    """Poll a job until it finishes — call this after process_document or build_dataset (Step 2).
 
-    Poll every 3–5 seconds until status is 'completed' or 'failed'.
+    Call repeatedly every 3–5 seconds until status is 'completed' or 'failed'.
+    For data_process jobs: the completed response includes execution_id — pass it to
+    get_extraction_result. For dataset_build jobs: the completed response includes
+    dataset_id — pass it to export_dataset.
 
     Args:
         job_id: Job ID returned by process_document or build_dataset.
@@ -89,14 +100,19 @@ async def get_job_status(job_id: int) -> dict[str, Any]:
 
 @mcp.tool()
 async def get_extraction_result(execution_id: int) -> dict[str, Any]:
-    """Return the structured extracted fields from a completed processing job.
+    """Read structured fields extracted from a completed document (Step 3).
 
-    Use execution_id from the get_job_status completed response.
-    Masked fields are returned as [MASKED_TYPE] placeholders — raw PII is
-    never exposed.
+    Use the execution_id from a completed data_process job (get_job_status response).
+    Returns document type, detected language, quality grade (A–D), PII summary,
+    column list, and extracted field values. If no dataset has been built yet, the
+    response includes a fields_hint guiding you to call build_dataset next.
+    To retrieve all rows as a file, proceed to build_dataset → export_dataset.
+
+    Note: Masked fields appear as [MASKED_TYPE] placeholders — raw PII is never returned.
+    Note: execution_id comes from data_process jobs only; dataset_build jobs use dataset_id.
 
     Args:
-        execution_id: Execution ID from get_job_status output.
+        execution_id: Execution ID from the get_job_status completed response.
     """
     return await tools_result.run(_get_client(), execution_id)
 
@@ -111,15 +127,18 @@ async def build_dataset(
     name: str = "",
     description: str = "",
 ) -> dict[str, Any]:
-    """Build a structured dataset from a completed processing execution.
+    """Package extracted records into a dataset for export (Step 4).
 
-    Returns a job_id to poll with get_job_status. Once completed, the response
-    includes dataset_id — use export_dataset to retrieve all records.
+    Triggers an async dataset build from a completed execution. Returns a job_id
+    immediately — poll with get_job_status until status='completed'. The completed
+    response includes dataset_id, which you pass to export_dataset to retrieve all
+    records as text. This step is required before calling export_dataset.
 
     Args:
-        execution_id: Execution ID from get_job_status or get_extraction_result.
-        name: Dataset name. Auto-generated if omitted.
-        description: Optional dataset description.
+        execution_id: Execution ID from a completed data_process job
+                      (from get_job_status or get_extraction_result).
+        name: Dataset name. Auto-generated from the source filename if omitted.
+        description: Optional description for this dataset.
     """
     return await tools_build.run(_get_client(), execution_id, name, description)
 
@@ -137,19 +156,21 @@ async def search_documents(
     language: str = "",
     quality_grade: str = "",
 ) -> dict[str, Any]:
-    """Search across all indexed datasets using structured or semantic search.
+    """Search across all indexed FlexOrch datasets by keyword or meaning.
 
-    Structured search (all plans): keyword/field matching.
-    Semantic/hybrid search (Pro+): vector similarity via pgvector.
-    mode='auto' selects automatically based on document type and plan.
+    Use this to find specific documents or records without processing a new file.
+    Requires at least one dataset to exist. Structured search works on all plans.
+    Semantic and hybrid modes require a Pro plan — a clear upgrade message is returned
+    if the plan is insufficient. mode='auto' picks structured on free plans, hybrid on Pro+.
 
     Args:
-        query: Natural language or keyword search query (max 1000 chars).
+        query: Search query — natural language or keyword. Max 1000 characters.
         top_k: Number of results to return. Default: 5, max: 50.
-        mode: Search mode — auto, structured, semantic, hybrid. Default: auto.
-        document_type: Filter by document type (optional).
-        language: Filter by language ISO 639-1 code (optional).
-        quality_grade: Filter by quality grade A/B/C/D (optional).
+        mode: Search strategy — auto (default), structured, semantic, hybrid.
+              semantic and hybrid require Pro plan.
+        document_type: Filter to a specific document type, e.g. invoice (optional).
+        language: Filter by document language, ISO 639-1 code, e.g. en, de, tr (optional).
+        quality_grade: Filter by quality grade: A, B, C, or D (optional).
     """
     return await tools_search.run(
         _get_client(), query, top_k, mode, document_type, language, quality_grade
@@ -165,18 +186,21 @@ async def export_dataset(
     dataset_id: int,
     format: str = "jsonl",
 ) -> dict[str, Any]:
-    """Export a built dataset and return its full content as text.
+    """Download all records from a built dataset as text (Step 5 — final step).
 
-    Text formats (jsonl, csv, json, md, xml, rag) are returned inline.
-    Binary formats (parquet, hf) are not supported via MCP — download
-    them directly from the FlexOrch API.
+    Returns the complete dataset content as a UTF-8 string directly in the response —
+    no file download or separate URL needed. Call get_job_status after build_dataset
+    and wait for status='completed' before calling this tool. Use the dataset_id from
+    that completed response.
 
-    rag format returns LangChain/LlamaIndex-compatible chunked JSON.
-    jsonl format is optimized for LLM fine-tuning.
+    Format guide: jsonl = LLM fine-tuning, rag = LangChain/LlamaIndex chunks,
+    csv = spreadsheets, md = human-readable, xml = structured interchange.
+    Binary formats (parquet, hf) cannot be returned via MCP — export them from
+    the FlexOrch dashboard directly.
 
     Args:
-        dataset_id: Dataset ID from get_job_status (dataset_build completed).
-        format: Export format — jsonl, csv, json, md, xml, rag. Default: jsonl.
+        dataset_id: Dataset ID from the get_job_status completed build response.
+        format: Text export format — jsonl, csv, json, md, xml, rag. Default: jsonl.
     """
     return await tools_export.run(_get_client(), dataset_id, format)
 
