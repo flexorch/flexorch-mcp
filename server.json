@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.dev-flexorch/flexorch-mcp",
   "title": "FlexOrch",
-  "description": "Document classification, structured field extraction, PII masking, and LLM-ready dataset export for AI agents. Process PDFs, DOCX, invoices, contracts, payroll sheets — get clean JSONL for fine-tuning or RAG chunks for LangChain/LlamaIndex.",
+  "description": "Classify documents, extract structured fields, mask PII, export JSONL/RAG datasets for AI agents.",
   "repository": {
     "url": "https://github.com/flexorch/flexorch-mcp",
     "source": "github"
