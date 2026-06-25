@@ -4,6 +4,14 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.3] — 2026-06-25
+
+### Added
+- HTTP transport mode: `MCP_TRANSPORT=http` starts a Streamable HTTP server with per-request API key isolation via `ContextVar` (`Authorization: Bearer`, `X-API-KEY`, `?api_key=` all accepted)
+- `Dockerfile` for containerized HTTP deployment
+
+---
+
 ## [0.1.2] — 2026-06-25
 
 ### Changed
