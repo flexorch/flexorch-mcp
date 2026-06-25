@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
+from contextvars import ContextVar
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -18,15 +19,23 @@ from .tools import export as tools_export
 
 _TOOLS_COUNT = 6
 
-# Shared async client — created once per process, reuses connection pool.
+# HTTP mode: API key set per-request by _APIKeyMiddleware.
+# stdio mode: empty string — _get_client() falls back to env var singleton.
+_request_api_key: ContextVar[str] = ContextVar("_request_api_key", default="")
+
+# Singleton for stdio mode — one process, one API key.
 _api_client: FlexOrchMCPClient | None = None
 
 
 def _get_client() -> FlexOrchMCPClient:
+    key = _request_api_key.get()
+    if key:
+        # HTTP mode: fresh client per request so each user's key is isolated.
+        return FlexOrchMCPClient(key)
+    # stdio mode: singleton initialized once from env var.
     global _api_client
     if _api_client is None:
-        api_key = os.environ.get("FLEXORCH_API_KEY", "")
-        _api_client = FlexOrchMCPClient(api_key)
+        _api_client = FlexOrchMCPClient(os.environ.get("FLEXORCH_API_KEY", ""))
     return _api_client
 
 mcp = FastMCP(
@@ -244,6 +253,50 @@ def _mask(key: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# HTTP transport helpers
+# ---------------------------------------------------------------------------
+
+class _APIKeyMiddleware:
+    """ASGI middleware: extracts API key from request and stores in ContextVar."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] in ("http", "websocket"):
+            headers: dict[bytes, bytes] = dict(scope.get("headers", []))
+            key = ""
+            auth = headers.get(b"authorization", b"").decode()
+            if auth.lower().startswith("bearer "):
+                key = auth[7:].strip()
+            if not key:
+                key = headers.get(b"x-api-key", b"").decode()
+            if not key:
+                qs = scope.get("query_string", b"").decode()
+                for param in qs.split("&"):
+                    if param.startswith("api_key="):
+                        key = param[8:]
+                        break
+            token = _request_api_key.set(key)
+            try:
+                await self.app(scope, receive, send)
+            finally:
+                _request_api_key.reset(token)
+        else:
+            await self.app(scope, receive, send)
+
+
+def _run_http() -> None:
+    import uvicorn
+
+    starlette_app = mcp.streamable_http_app()
+    wrapped = _APIKeyMiddleware(starlette_app)
+    port = int(os.environ.get("PORT", "8080"))
+    print(f"FlexOrch MCP HTTP server starting on 0.0.0.0:{port}", file=sys.stderr)
+    uvicorn.run(wrapped, host="0.0.0.0", port=port, log_level="info")  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -251,6 +304,12 @@ def main() -> None:
     if "--check" in sys.argv:
         code = asyncio.run(_run_check())
         sys.exit(code)
+
+    transport = os.environ.get("MCP_TRANSPORT", "stdio")
+
+    if transport == "http":
+        _run_http()
+        return
 
     api_key = os.environ.get("FLEXORCH_API_KEY", "")
     if not api_key:
