@@ -2,6 +2,7 @@
 
 <!-- mcp-name: io.github.dev-flexorch/flexorch-mcp -->
 
+[![smithery badge](https://smithery.ai/badge/developer-ty82/flexorch-mcp)](https://smithery.ai/servers/developer-ty82/flexorch-mcp)
 [![PyPI version](https://badge.fury.io/py/flexorch-mcp.svg)](https://pypi.org/project/flexorch-mcp/)
 [![CI](https://github.com/flexorch/flexorch-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/flexorch/flexorch-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
