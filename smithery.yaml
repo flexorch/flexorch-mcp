@@ -1,5 +1,6 @@
 startCommand:
-  type: stdio
+  type: http
+  url: https://mcp.flexorch.com
   configSchema:
     type: object
     properties:
@@ -8,11 +9,5 @@ startCommand:
         description: "FlexOrch API key — get one at app.flexorch.com/settings"
     required:
       - apiKey
-  commandFunction: |-
-    (config) => ({
-      command: "uvx",
-      args: ["flexorch-mcp"],
-      env: {
-        FLEXORCH_API_KEY: config.apiKey
-      }
-    })
+  exampleConfig:
+    apiKey: ""
