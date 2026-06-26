@@ -2,6 +2,11 @@
 
 <!-- mcp-name: io.github.dev-flexorch/flexorch-mcp -->
 
+[![PyPI version](https://badge.fury.io/py/flexorch-mcp.svg)](https://pypi.org/project/flexorch-mcp/)
+[![CI](https://github.com/flexorch/flexorch-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/flexorch/flexorch-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
 **MCP server for FlexOrch — SDK for machines.**
 
 Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorch.com) document intelligence pipeline. Process documents, extract structured data, detect PII, and export LLM-ready datasets — all through natural language tool calls.
