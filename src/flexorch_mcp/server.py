@@ -293,7 +293,7 @@ def _run_http() -> None:
     wrapped = _APIKeyMiddleware(starlette_app)
     port = int(os.environ.get("PORT", "8080"))
     print(f"FlexOrch MCP HTTP server starting on 0.0.0.0:{port}", file=sys.stderr)
-    uvicorn.run(wrapped, host="0.0.0.0", port=port, log_level="info")  # type: ignore[arg-type]
+    uvicorn.run(wrapped, host="0.0.0.0", port=port, log_level="info")
 
 
 # ---------------------------------------------------------------------------
