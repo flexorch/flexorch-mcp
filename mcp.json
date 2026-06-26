@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "flexorch": {
+      "command": "uvx",
+      "args": ["flexorch-mcp"],
+      "env": {
+        "FLEXORCH_API_KEY": "${FLEXORCH_API_KEY}"
+      }
+    }
+  }
+}
