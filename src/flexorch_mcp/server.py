@@ -7,6 +7,8 @@ from contextvars import ContextVar
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+from pydantic import BaseModel, ConfigDict
 
 from .client import FlexOrchMCPClient
 from .errors import FlexOrchAPIError
@@ -16,6 +18,86 @@ from .tools import result as tools_result
 from .tools import build as tools_build
 from .tools import search as tools_search
 from .tools import export as tools_export
+
+
+# ---------------------------------------------------------------------------
+# Output models — allow extra fields so future API additions don't break tools
+# ---------------------------------------------------------------------------
+
+class _Base(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    isError: bool | None = None
+    error: str | None = None
+
+
+class ProcessDocumentResult(_Base):
+    job_id: int | None = None
+    status: str | None = None
+    poll_hint: str | None = None
+
+
+class JobStatusResult(_Base):
+    job_id: int | None = None
+    status: str | None = None
+    execution_id: int | None = None
+    dataset_id: int | None = None
+    dataset_name: str | None = None
+    row_count: int | None = None
+    quality_grade: str | None = None
+    quality_score: float | None = None
+    pii_found: bool | None = None
+    pii_masked: bool | None = None
+    pii_count: int | None = None
+    has_dataset: bool | None = None
+    stage: str | None = None
+    reason: str | None = None
+    poll_hint: str | None = None
+
+
+class _QualityInfo(_Base):
+    grade: str | None = None
+    score: float | None = None
+    warnings: list[str] = []
+
+
+class _PrivacyInfo(_Base):
+    pii_findings_count: int = 0
+    pii_masked: bool = False
+
+
+class ExtractionResult(_Base):
+    execution_id: int | None = None
+    document_type: str | None = None
+    detected_language: str | None = None
+    quality: _QualityInfo | None = None
+    privacy: _PrivacyInfo | None = None
+    row_count: int | None = None
+    columns: list[str] = []
+    fields: list[Any] | None = None
+    fields_hint: str | None = None
+    has_more: bool | None = None
+    has_more_hint: str | None = None
+
+
+class BuildDatasetResult(_Base):
+    job_id: int | None = None
+    status: str | None = None
+    poll_hint: str | None = None
+
+
+class SearchResult(_Base):
+    results: list[Any] = []
+    total_results: int | None = None
+    mode: str | None = None
+    query: str | None = None
+
+
+class ExportResult(_Base):
+    dataset_id: int | None = None
+    format: str | None = None
+    filename: str | None = None
+    content: str | None = None
+    byte_count: int | None = None
 
 _TOOLS_COUNT = 6
 
@@ -29,13 +111,15 @@ _api_client: FlexOrchMCPClient | None = None
 
 def _get_client() -> FlexOrchMCPClient:
     key = _request_api_key.get()
+    base_url = os.environ.get("FLEXORCH_BASE_URL", "")
     if key:
         # HTTP mode: fresh client per request so each user's key is isolated.
-        return FlexOrchMCPClient(key)
+        return FlexOrchMCPClient(key, **({} if not base_url else {"base_url": base_url + "/v1"}))
     # stdio mode: singleton initialized once from env var.
     global _api_client
     if _api_client is None:
-        _api_client = FlexOrchMCPClient(os.environ.get("FLEXORCH_API_KEY", ""))
+        kwargs = {} if not base_url else {"base_url": base_url + "/v1"}
+        _api_client = FlexOrchMCPClient(os.environ.get("FLEXORCH_API_KEY", ""), **kwargs)
     return _api_client
 
 mcp = FastMCP(
@@ -58,12 +142,21 @@ mcp = FastMCP(
 # Tool 1: process_document
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(
+    title="Process Document",
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=True,
+    ),
+    structured_output=True,
+)
 async def process_document(
     file_url: str,
     mask_pii: bool = True,
     document_type: str = "auto",
-) -> dict[str, Any]:
+) -> ProcessDocumentResult:
     """Submit a document for processing — this is always the first step (Step 1 of 5).
 
     Downloads the file from file_url, then submits it to FlexOrch for automatic
@@ -81,15 +174,24 @@ async def process_document(
                        Values: invoice, expense_report, purchase_order,
                        sales_proposal, bank_statement, payroll.
     """
-    return await tools_process.run(_get_client(), file_url, mask_pii, document_type)
+    data = await tools_process.run(_get_client(), file_url, mask_pii, document_type)
+    return ProcessDocumentResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------
 # Tool 2: get_job_status
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
-async def get_job_status(job_id: int) -> dict[str, Any]:
+@mcp.tool(
+    title="Get Job Status",
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def get_job_status(job_id: int) -> JobStatusResult:
     """Poll a job until it finishes — call this after process_document or build_dataset (Step 2).
 
     Call repeatedly every 3–5 seconds until status is 'completed' or 'failed'.
@@ -100,15 +202,24 @@ async def get_job_status(job_id: int) -> dict[str, Any]:
     Args:
         job_id: Job ID returned by process_document or build_dataset.
     """
-    return await tools_status.run(_get_client(), job_id)
+    data = await tools_status.run(_get_client(), job_id)
+    return JobStatusResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------
 # Tool 3: get_extraction_result
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
-async def get_extraction_result(execution_id: int) -> dict[str, Any]:
+@mcp.tool(
+    title="Get Extraction Result",
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def get_extraction_result(execution_id: int) -> ExtractionResult:
     """Read structured fields extracted from a completed document (Step 3).
 
     Use the execution_id from a completed data_process job (get_job_status response).
@@ -123,19 +234,29 @@ async def get_extraction_result(execution_id: int) -> dict[str, Any]:
     Args:
         execution_id: Execution ID from the get_job_status completed response.
     """
-    return await tools_result.run(_get_client(), execution_id)
+    data = await tools_result.run(_get_client(), execution_id)
+    return ExtractionResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------
 # Tool 4: build_dataset
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(
+    title="Build Dataset",
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
 async def build_dataset(
     execution_id: int,
     name: str = "",
     description: str = "",
-) -> dict[str, Any]:
+) -> BuildDatasetResult:
     """Package extracted records into a dataset for export (Step 4).
 
     Triggers an async dataset build from a completed execution. Returns a job_id
@@ -149,14 +270,23 @@ async def build_dataset(
         name: Dataset name. Auto-generated from the source filename if omitted.
         description: Optional description for this dataset.
     """
-    return await tools_build.run(_get_client(), execution_id, name, description)
+    data = await tools_build.run(_get_client(), execution_id, name, description)
+    return BuildDatasetResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------
 # Tool 5: search_documents
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(
+    title="Search Documents",
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
 async def search_documents(
     query: str,
     top_k: int = 5,
@@ -164,7 +294,7 @@ async def search_documents(
     document_type: str = "",
     language: str = "",
     quality_grade: str = "",
-) -> dict[str, Any]:
+) -> SearchResult:
     """Search across all indexed FlexOrch datasets by keyword or meaning.
 
     Use this to find specific documents or records without processing a new file.
@@ -181,20 +311,29 @@ async def search_documents(
         language: Filter by document language, ISO 639-1 code, e.g. en, de, tr (optional).
         quality_grade: Filter by quality grade: A, B, C, or D (optional).
     """
-    return await tools_search.run(
+    data = await tools_search.run(
         _get_client(), query, top_k, mode, document_type, language, quality_grade
     )
+    return SearchResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------
 # Tool 6: export_dataset
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
+@mcp.tool(
+    title="Export Dataset",
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
 async def export_dataset(
     dataset_id: int,
     format: str = "jsonl",
-) -> dict[str, Any]:
+) -> ExportResult:
     """Download all records from a built dataset as text (Step 5 — final step).
 
     Returns the complete dataset content as a UTF-8 string directly in the response —
@@ -211,7 +350,8 @@ async def export_dataset(
         dataset_id: Dataset ID from the get_job_status completed build response.
         format: Text export format — jsonl, csv, json, md, xml, rag. Default: jsonl.
     """
-    return await tools_export.run(_get_client(), dataset_id, format)
+    data = await tools_export.run(_get_client(), dataset_id, format)
+    return ExportResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------

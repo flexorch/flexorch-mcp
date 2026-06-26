@@ -4,6 +4,14 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.4] — 2026-06-26
+
+### Added
+- `FLEXORCH_BASE_URL` environment variable support: set a custom API base URL (e.g. staging or self-hosted) via env var; server passes it to the HTTP client automatically
+- `smithery.yaml`: optional `baseUrl` configSchema field surfaces `FLEXORCH_BASE_URL` to Smithery's UI installer
+
+---
+
 ## [0.1.3] — 2026-06-25
 
 ### Added

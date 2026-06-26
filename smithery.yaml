@@ -6,6 +6,10 @@ startCommand:
       apiKey:
         type: string
         description: "FlexOrch API key — get one at app.flexorch.com/settings"
+      baseUrl:
+        type: string
+        description: "FlexOrch API base URL (optional — defaults to https://api.flexorch.com)"
+        default: "https://api.flexorch.com"
     required:
       - apiKey
   commandFunction: |-
@@ -13,6 +17,7 @@ startCommand:
       command: "uvx",
       args: ["flexorch-mcp"],
       env: {
-        FLEXORCH_API_KEY: config.apiKey
+        FLEXORCH_API_KEY: config.apiKey,
+        FLEXORCH_BASE_URL: config.baseUrl || "https://api.flexorch.com"
       }
     })
