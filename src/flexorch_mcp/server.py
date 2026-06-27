@@ -127,13 +127,13 @@ mcp = FastMCP(
     instructions=(
         "FlexOrch converts unstructured documents (PDF, DOCX, invoices, contracts, payroll, etc.) "
         "into structured, LLM-ready datasets with PII masking and quality scoring. "
-        "Standard workflow (all steps are async — always poll flexorch_get_job_status after submitting a job): "
-        "1. flexorch_process_document(file_url) → returns job_id. "
-        "2. flexorch_get_job_status(job_id) — poll every 3–5 s until status='completed'. Response includes execution_id. "
-        "3. flexorch_get_extraction_result(execution_id) — read extracted fields and quality grade. "
-        "4. flexorch_build_dataset(execution_id) → returns build job_id. Poll flexorch_get_job_status again. "
-        "5. flexorch_export_dataset(dataset_id, format) — returns full dataset content as text. "
-        "To search existing datasets without processing a new document: flexorch_search_documents(query)."
+        "Standard workflow (all steps are async — always poll flexorch.job.status after submitting a job): "
+        "1. flexorch.document.process(file_url) → returns job_id. "
+        "2. flexorch.job.status(job_id) — poll every 3–5 s until status='completed'. Response includes execution_id. "
+        "3. flexorch.job.result(execution_id) — read extracted fields and quality grade. "
+        "4. flexorch.dataset.build(execution_id) → returns build job_id. Poll flexorch.job.status again. "
+        "5. flexorch.dataset.export(dataset_id, format) — returns full dataset content as text. "
+        "To search existing datasets without processing a new document: flexorch.dataset.search(query)."
     ),
 )
 
@@ -143,7 +143,7 @@ mcp = FastMCP(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
-    name="flexorch_process_document",
+    name="flexorch.document.process",
     title="Process Document",
     annotations=ToolAnnotations(
         readOnlyHint=False,
@@ -163,8 +163,8 @@ async def process_document(
     Downloads the file from file_url, then submits it to FlexOrch for automatic
     classification, structured field extraction, PII detection/masking, and quality
     scoring. Processing is asynchronous — this tool returns immediately with a
-    job_id. You MUST call flexorch_get_job_status(job_id) every 3–5 seconds until
-    status='completed' before calling flexorch_get_extraction_result.
+    job_id. You MUST call flexorch.job.status(job_id) every 3–5 seconds until
+    status='completed' before calling flexorch.job.result.
 
     Args:
         file_url: Publicly accessible URL of the document (http/https only, max 50 MB).
@@ -184,7 +184,7 @@ async def process_document(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
-    name="flexorch_get_job_status",
+    name="flexorch.job.status",
     title="Get Job Status",
     annotations=ToolAnnotations(
         readOnlyHint=True,
@@ -194,15 +194,15 @@ async def process_document(
     structured_output=True,
 )
 async def get_job_status(job_id: int) -> JobStatusResult:
-    """Poll a job until it finishes — call this after flexorch_process_document or flexorch_build_dataset (Step 2).
+    """Poll a job until it finishes — call this after flexorch.document.process or flexorch.dataset.build (Step 2).
 
     Call repeatedly every 3–5 seconds until status is 'completed' or 'failed'.
     For data_process jobs: the completed response includes execution_id — pass it to
-    flexorch_get_extraction_result. For dataset_build jobs: the completed response includes
-    dataset_id — pass it to flexorch_export_dataset.
+    flexorch.job.result. For dataset_build jobs: the completed response includes
+    dataset_id — pass it to flexorch.dataset.export.
 
     Args:
-        job_id: Job ID returned by flexorch_process_document or flexorch_build_dataset.
+        job_id: Job ID returned by flexorch.document.process or flexorch.dataset.build.
     """
     data = await tools_status.run(_get_client(), job_id)
     return JobStatusResult.model_validate(data)
@@ -213,7 +213,7 @@ async def get_job_status(job_id: int) -> JobStatusResult:
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
-    name="flexorch_get_extraction_result",
+    name="flexorch.job.result",
     title="Get Extraction Result",
     annotations=ToolAnnotations(
         readOnlyHint=True,
@@ -225,17 +225,17 @@ async def get_job_status(job_id: int) -> JobStatusResult:
 async def get_extraction_result(execution_id: int) -> ExtractionResult:
     """Read structured fields extracted from a completed document (Step 3).
 
-    Use the execution_id from a completed data_process job (flexorch_get_job_status response).
+    Use the execution_id from a completed data_process job (flexorch.job.status response).
     Returns document type, detected language, quality grade (A–D), PII summary,
     column list, and extracted field values. If no dataset has been built yet, the
-    response includes a fields_hint guiding you to call flexorch_build_dataset next.
-    To retrieve all rows as a file, proceed to flexorch_build_dataset → flexorch_export_dataset.
+    response includes a fields_hint guiding you to call flexorch.dataset.build next.
+    To retrieve all rows as a file, proceed to flexorch.dataset.build → flexorch.dataset.export.
 
     Note: Masked fields appear as [MASKED_TYPE] placeholders — raw PII is never returned.
     Note: execution_id comes from data_process jobs only; dataset_build jobs use dataset_id.
 
     Args:
-        execution_id: Execution ID from the flexorch_get_job_status completed response.
+        execution_id: Execution ID from the flexorch.job.status completed response.
     """
     data = await tools_result.run(_get_client(), execution_id)
     return ExtractionResult.model_validate(data)
@@ -246,7 +246,7 @@ async def get_extraction_result(execution_id: int) -> ExtractionResult:
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
-    name="flexorch_build_dataset",
+    name="flexorch.dataset.build",
     title="Build Dataset",
     annotations=ToolAnnotations(
         readOnlyHint=False,
@@ -264,13 +264,13 @@ async def build_dataset(
     """Package extracted records into a dataset for export (Step 4).
 
     Triggers an async dataset build from a completed execution. Returns a job_id
-    immediately — poll with flexorch_get_job_status until status='completed'. The completed
-    response includes dataset_id, which you pass to flexorch_export_dataset to retrieve all
-    records as text. This step is required before calling flexorch_export_dataset.
+    immediately — poll with flexorch.job.status until status='completed'. The completed
+    response includes dataset_id, which you pass to flexorch.dataset.export to retrieve all
+    records as text. This step is required before calling flexorch.dataset.export.
 
     Args:
         execution_id: Execution ID from a completed data_process job
-                      (from flexorch_get_job_status or flexorch_get_extraction_result).
+                      (from flexorch.job.status or flexorch.job.result).
         name: Dataset name. Auto-generated from the source filename if omitted.
         description: Optional description for this dataset.
     """
@@ -283,7 +283,7 @@ async def build_dataset(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
-    name="flexorch_search_documents",
+    name="flexorch.dataset.search",
     title="Search Documents",
     annotations=ToolAnnotations(
         readOnlyHint=True,
@@ -327,7 +327,7 @@ async def search_documents(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
-    name="flexorch_export_dataset",
+    name="flexorch.dataset.export",
     title="Export Dataset",
     annotations=ToolAnnotations(
         readOnlyHint=True,

@@ -4,6 +4,15 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.6] — 2026-06-27
+
+### Changed
+- Rename all 6 MCP tools to dot-notation tree format for Smithery naming convention
+  (`flexorch.document.process`, `flexorch.job.status`, `flexorch.job.result`,
+  `flexorch.dataset.build`, `flexorch.dataset.search`, `flexorch.dataset.export`)
+
+---
+
 ## [0.1.5] — 2026-06-27
 
 ### Changed
