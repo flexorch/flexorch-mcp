@@ -4,6 +4,14 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.5] — 2026-06-27
+
+### Changed
+- Rename all 6 MCP tools with `flexorch_` prefix for Smithery naming convention (e.g. `flexorch_process_document`)
+- Update server instructions and docstring cross-references to use prefixed names
+
+---
+
 ## [0.1.4] — 2026-06-26
 
 ### Added
