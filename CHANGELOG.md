@@ -4,6 +4,14 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.9] — 2026-06-28
+
+### Fixed
+- `__init__.py` now reads `__version__` from package metadata via `importlib.metadata` — eliminates manual version sync and the 0.1.6/0.1.8 mismatch bugs
+- Add `scripts/bump_version.py`: single command updates pyproject.toml, server.json, server-card.json atomically
+
+---
+
 ## [0.1.8] — 2026-06-28
 
 ### Fixed
