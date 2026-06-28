@@ -1,7 +1,7 @@
 {
   "serverInfo": {
     "name": "flexorch-mcp",
-    "version": "0.1.6"
+    "version": "0.1.7"
   },
   "authentication": {
     "required": true,
@@ -9,9 +9,9 @@
   },
   "tools": [
     {
-      "name": "flexorch.document.process",
+      "name": "document.process",
       "title": "Process Document",
-      "description": "Submit a document for processing — Step 1 of 5. Returns job_id immediately; poll flexorch.job.status until completed.",
+      "description": "Submit a document for processing — Step 1 of 5. Returns job_id immediately; poll job.status until completed.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -20,65 +20,22 @@
           "document_type": {"type": "string", "default": "auto", "description": "Classification hint: invoice, expense_report, purchase_order, sales_proposal, bank_statement, payroll, or auto"}
         },
         "required": ["file_url"]
-      },
-      "outputSchema": {
-        "type": "object",
-        "properties": {
-          "job_id": {"type": "integer", "description": "Job ID to poll with flexorch.job.status"},
-          "status": {"type": "string", "description": "Initial status, always 'queued'"},
-          "poll_hint": {"type": "string", "description": "Instruction for next step"},
-          "isError": {"type": "boolean"},
-          "error": {"type": "string"}
-        }
-      },
-      "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": true
       }
     },
     {
-      "name": "flexorch.job.status",
+      "name": "job.status",
       "title": "Get Job Status",
       "description": "Poll a job until it finishes — Step 2. Call every 3-5s until status is completed or failed.",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "job_id": {"type": "integer", "description": "Job ID returned by flexorch.document.process or flexorch.dataset.build"}
+          "job_id": {"type": "integer", "description": "Job ID returned by document.process or dataset.build"}
         },
         "required": ["job_id"]
-      },
-      "outputSchema": {
-        "type": "object",
-        "properties": {
-          "job_id": {"type": "integer"},
-          "status": {"type": "string", "description": "queued | running | completed | failed"},
-          "execution_id": {"type": "integer", "description": "Set when data_process job completes"},
-          "dataset_id": {"type": "integer", "description": "Set when dataset_build job completes"},
-          "dataset_name": {"type": "string"},
-          "row_count": {"type": "integer"},
-          "quality_grade": {"type": "string", "description": "A, B, C, or D"},
-          "quality_score": {"type": "number"},
-          "pii_found": {"type": "boolean"},
-          "pii_masked": {"type": "boolean"},
-          "pii_count": {"type": "integer"},
-          "has_dataset": {"type": "boolean"},
-          "stage": {"type": "string"},
-          "reason": {"type": "string", "description": "Failure reason when status is failed"},
-          "poll_hint": {"type": "string"},
-          "isError": {"type": "boolean"},
-          "error": {"type": "string"}
-        }
-      },
-      "annotations": {
-        "readOnlyHint": true,
-        "idempotentHint": true,
-        "openWorldHint": false
       }
     },
     {
-      "name": "flexorch.job.result",
+      "name": "job.result",
       "title": "Get Extraction Result",
       "description": "Read structured fields extracted from a completed document — Step 3.",
       "inputSchema": {
@@ -87,48 +44,12 @@
           "execution_id": {"type": "integer", "description": "Execution ID from a completed data_process job"}
         },
         "required": ["execution_id"]
-      },
-      "outputSchema": {
-        "type": "object",
-        "properties": {
-          "execution_id": {"type": "integer"},
-          "document_type": {"type": "string"},
-          "detected_language": {"type": "string", "description": "ISO 639-1 language code"},
-          "quality": {
-            "type": "object",
-            "properties": {
-              "grade": {"type": "string", "description": "A, B, C, or D"},
-              "score": {"type": "number", "description": "0.0 to 1.0"},
-              "warnings": {"type": "array", "items": {"type": "string"}}
-            }
-          },
-          "privacy": {
-            "type": "object",
-            "properties": {
-              "pii_findings_count": {"type": "integer"},
-              "pii_masked": {"type": "boolean"}
-            }
-          },
-          "row_count": {"type": "integer"},
-          "columns": {"type": "array", "items": {"type": "string"}},
-          "fields": {"type": "array", "items": {"type": "object"}, "description": "Extracted records (first 100)"},
-          "fields_hint": {"type": "string", "description": "Present when no dataset built yet"},
-          "has_more": {"type": "boolean"},
-          "has_more_hint": {"type": "string"},
-          "isError": {"type": "boolean"},
-          "error": {"type": "string"}
-        }
-      },
-      "annotations": {
-        "readOnlyHint": true,
-        "idempotentHint": true,
-        "openWorldHint": false
       }
     },
     {
-      "name": "flexorch.dataset.build",
+      "name": "dataset.build",
       "title": "Build Dataset",
-      "description": "Package extracted records into a dataset for export — Step 4. Returns job_id; poll flexorch.job.status until completed.",
+      "description": "Package extracted records into a dataset for export — Step 4. Returns job_id; poll job.status until completed.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -137,26 +58,10 @@
           "description": {"type": "string", "default": "", "description": "Optional description"}
         },
         "required": ["execution_id"]
-      },
-      "outputSchema": {
-        "type": "object",
-        "properties": {
-          "job_id": {"type": "integer", "description": "Build job ID to poll with flexorch.job.status"},
-          "status": {"type": "string"},
-          "poll_hint": {"type": "string"},
-          "isError": {"type": "boolean"},
-          "error": {"type": "string"}
-        }
-      },
-      "annotations": {
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
       }
     },
     {
-      "name": "flexorch.dataset.search",
+      "name": "dataset.search",
       "title": "Search Documents",
       "description": "Search across all indexed FlexOrch datasets by keyword or semantic meaning.",
       "inputSchema": {
@@ -170,26 +75,10 @@
           "quality_grade": {"type": "string", "default": "", "description": "Filter by quality grade: A, B, C, or D"}
         },
         "required": ["query"]
-      },
-      "outputSchema": {
-        "type": "object",
-        "properties": {
-          "results": {"type": "array", "items": {"type": "object"}, "description": "Matching records"},
-          "total_results": {"type": "integer"},
-          "mode": {"type": "string", "description": "Search mode used"},
-          "query": {"type": "string"},
-          "isError": {"type": "boolean"},
-          "error": {"type": "string"}
-        }
-      },
-      "annotations": {
-        "readOnlyHint": true,
-        "idempotentHint": true,
-        "openWorldHint": false
       }
     },
     {
-      "name": "flexorch.dataset.export",
+      "name": "dataset.export",
       "title": "Export Dataset",
       "description": "Download all records from a built dataset as text — Step 5, final step.",
       "inputSchema": {
@@ -199,23 +88,6 @@
           "format": {"type": "string", "default": "jsonl", "description": "Export format: jsonl, csv, json, md, xml, rag"}
         },
         "required": ["dataset_id"]
-      },
-      "outputSchema": {
-        "type": "object",
-        "properties": {
-          "dataset_id": {"type": "integer"},
-          "format": {"type": "string"},
-          "filename": {"type": "string"},
-          "content": {"type": "string", "description": "Full dataset content as UTF-8 text"},
-          "byte_count": {"type": "integer"},
-          "isError": {"type": "boolean"},
-          "error": {"type": "string"}
-        }
-      },
-      "annotations": {
-        "readOnlyHint": true,
-        "idempotentHint": true,
-        "openWorldHint": false
       }
     }
   ],

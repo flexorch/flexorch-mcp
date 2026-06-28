@@ -27,12 +27,12 @@ Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorc
 
 | Tool | Description |
 |------|-------------|
-| `flexorch.document.process` | Upload and process a document (PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF) |
-| `flexorch.job.status` | Poll a processing job until completed or failed |
-| `flexorch.job.result` | Get structured extracted fields from a completed job |
-| `flexorch.dataset.build` | Build a structured dataset from a completed execution |
-| `flexorch.dataset.search` | Semantic search across indexed datasets (Pro+) |
-| `flexorch.dataset.export` | Export a dataset as JSONL, CSV, JSON, XML, MD, or RAG (LangChain/LlamaIndex chunks) |
+| `document.process` | Upload and process a document (PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF) |
+| `job.status` | Poll a processing job until completed or failed |
+| `job.result` | Get structured extracted fields from a completed job |
+| `dataset.build` | Build a structured dataset from a completed execution |
+| `dataset.search` | Semantic search across indexed datasets (Pro+) |
+| `dataset.export` | Export a dataset as JSONL, CSV, JSON, XML, MD, or RAG (LangChain/LlamaIndex chunks) |
 
 ---
 
@@ -115,12 +115,12 @@ flexorch-mcp --check
 User: "Process this invoice and export it as JSONL for fine-tuning."
 
 Agent:
-  1. flexorch.document.process(file_url="https://...")   → job_id: 1234
-  2. flexorch.job.status(1234)                           → completed, execution_id: 567
-  3. flexorch.job.result(567)                            → vendor, total, date, PII masked
-  4. flexorch.dataset.build(execution_id=567)            → job_id: 1235
-  5. flexorch.job.status(1235)                           → completed, dataset_id: 89
-  6. flexorch.dataset.export(89, format="jsonl")         → inline JSONL content
+  1. document.process(file_url="https://...")   → job_id: 1234
+  2. job.status(1234)                           → completed, execution_id: 567
+  3. job.result(567)                            → vendor, total, date, PII masked
+  4. dataset.build(execution_id=567)            → job_id: 1235
+  5. job.status(1235)                           → completed, dataset_id: 89
+  6. dataset.export(89, format="jsonl")         → inline JSONL content
 ```
 
 ---

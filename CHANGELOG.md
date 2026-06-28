@@ -4,6 +4,15 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.7] — 2026-06-28
+
+### Changed
+- Remove `flexorch.` root prefix from all 6 tool names — tools are now `document.process`, `job.status`, `job.result`, `dataset.build`, `dataset.search`, `dataset.export`
+- Fixes Smithery naming score: all tools previously shared a single root node (`flexorch`), which Smithery treats as a flat list; two-level tree (`document.*`, `job.*`, `dataset.*`) satisfies the navigable-tree criterion
+- Update README tool table and example workflow, server-card.json, and server instructions to reflect new names
+
+---
+
 ## [0.1.6] — 2026-06-27
 
 ### Changed
