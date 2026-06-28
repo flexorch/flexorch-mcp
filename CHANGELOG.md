@@ -4,6 +4,13 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.1.8] — 2026-06-28
+
+### Fixed
+- Add `outputSchema` and `annotations` to all 6 tools in `server-card.json` — Smithery reads this file as fallback and was scoring output_scheme and annotation as failing because they were absent
+
+---
+
 ## [0.1.7] — 2026-06-28
 
 ### Changed
