@@ -27,12 +27,12 @@ Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorc
 
 | Tool | Description |
 |------|-------------|
-| `process_document` | Upload and process a document (PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF) |
-| `get_job_status` | Poll a processing job until completed or failed |
-| `get_extraction_result` | Get structured extracted fields from a completed job |
-| `build_dataset` | Build a structured dataset from a completed execution |
-| `search_documents` | Semantic search across indexed datasets (Pro+) |
-| `export_dataset` | Export a dataset as JSONL, CSV, JSON, XML, MD, or RAG (LangChain/LlamaIndex chunks) |
+| `flexorch.document.process` | Upload and process a document (PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF) |
+| `flexorch.job.status` | Poll a processing job until completed or failed |
+| `flexorch.job.result` | Get structured extracted fields from a completed job |
+| `flexorch.dataset.build` | Build a structured dataset from a completed execution |
+| `flexorch.dataset.search` | Semantic search across indexed datasets (Pro+) |
+| `flexorch.dataset.export` | Export a dataset as JSONL, CSV, JSON, XML, MD, or RAG (LangChain/LlamaIndex chunks) |
 
 ---
 
@@ -80,6 +80,19 @@ Add to your Cursor MCP config:
 }
 ```
 
+### OpenAI Codex
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.flexorch]
+command = "uvx"
+args = ["flexorch-mcp"]
+
+[mcp_servers.flexorch.env]
+FLEXORCH_API_KEY = "dfx_your_key_here"
+```
+
 Get your API key from [app.flexorch.com/settings](https://app.flexorch.com/settings).
 
 ---
@@ -102,12 +115,12 @@ flexorch-mcp --check
 User: "Process this invoice and export it as JSONL for fine-tuning."
 
 Agent:
-  1. process_document(file_url="https://...")   → job_id: 1234
-  2. get_job_status(1234)                        → completed, execution_id: 567
-  3. get_extraction_result(567)                  → vendor, total, date, PII masked
-  4. build_dataset(execution_id=567)             → job_id: 1235
-  5. get_job_status(1235)                        → completed, dataset_id: 89
-  6. export_dataset(89, format="jsonl")          → inline JSONL content
+  1. flexorch.document.process(file_url="https://...")   → job_id: 1234
+  2. flexorch.job.status(1234)                           → completed, execution_id: 567
+  3. flexorch.job.result(567)                            → vendor, total, date, PII masked
+  4. flexorch.dataset.build(execution_id=567)            → job_id: 1235
+  5. flexorch.job.status(1235)                           → completed, dataset_id: 89
+  6. flexorch.dataset.export(89, format="jsonl")         → inline JSONL content
 ```
 
 ---
