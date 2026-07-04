@@ -8,6 +8,12 @@
     "source": "github"
   },
   "version": "0.1.9",
+  "remotes": [
+    {
+      "transportType": "http",
+      "url": "https://mcp.flexorch.com/mcp"
+    }
+  ],
   "packages": [
     {
       "registryType": "pypi",
