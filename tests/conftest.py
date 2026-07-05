@@ -272,6 +272,64 @@ def mock_api():
             )
         )
 
+        # POST /datasets/89/index
+        router.post("/datasets/89/index").mock(
+            return_value=httpx.Response(
+                202,
+                json={
+                    "status": "success",
+                    "data": {"status": "indexing", "message": "Indexing started"},
+                    "error": None,
+                },
+            )
+        )
+
+        # POST /datasets/9999/index — plan gate
+        router.post("/datasets/9999/index").mock(
+            return_value=httpx.Response(
+                403,
+                json={"error": {"code": "PLAN_UPGRADE_REQUIRED", "min_plan": "pro"}},
+            )
+        )
+
+        # GET /datasets/89/chunks
+        router.get("/datasets/89/chunks").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "status": "success",
+                    "data": {
+                        "items": [
+                            {
+                                "chunk_id": "ch-1",
+                                "chunk_index": 0,
+                                "text": "Invoice total: 1200 EUR",
+                                "token_count": 8,
+                                "metadata": {
+                                    "quality_grade": "A",
+                                    "pii_masked": False,
+                                    "doc_type": "invoice",
+                                    "language": "en",
+                                },
+                            }
+                        ],
+                        "total": 1,
+                        "page": 1,
+                        "page_size": 20,
+                    },
+                    "error": None,
+                },
+            )
+        )
+
+        # GET /datasets/9999/chunks — plan gate
+        router.get("/datasets/9999/chunks").mock(
+            return_value=httpx.Response(
+                403,
+                json={"error": {"code": "PLAN_UPGRADE_REQUIRED", "min_plan": "pro"}},
+            )
+        )
+
         # GET /usage/current  — for --check
         router.get("/usage/current").mock(
             return_value=httpx.Response(

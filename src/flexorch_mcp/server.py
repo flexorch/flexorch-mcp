@@ -18,6 +18,8 @@ from .tools import result as tools_result
 from .tools import build as tools_build
 from .tools import search as tools_search
 from .tools import export as tools_export
+from .tools import index as tools_index
+from .tools import chunks as tools_chunks
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +101,24 @@ class ExportResult(_Base):
     content: str | None = None
     byte_count: int | None = None
 
-_TOOLS_COUNT = 6
+
+class IndexResult(_Base):
+    dataset_id: int | None = None
+    status: str | None = None
+    message: str | None = None
+    index_hint: str | None = None
+
+
+class ChunksResult(_Base):
+    dataset_id: int | None = None
+    chunks: list[Any] = []
+    chunk_count: int | None = None
+    total: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    has_more: bool | None = None
+
+_TOOLS_COUNT = 8
 
 # HTTP mode: API key set per-request by _APIKeyMiddleware.
 # stdio mode: empty string — _get_client() falls back to env var singleton.
@@ -133,7 +152,9 @@ mcp = FastMCP(
         "3. job.result(execution_id) — read extracted fields and quality grade. "
         "4. dataset.build(execution_id) → returns build job_id. Poll job.status again. "
         "5. dataset.export(dataset_id, format) — returns full dataset content as text. "
-        "To search existing datasets without processing a new document: dataset.search(query)."
+        "To search existing datasets without processing a new document: dataset.search(query). "
+        "For RAG pipelines (Pro plan): dataset.index(dataset_id) → indexes chunks; "
+        "dataset.chunks(dataset_id) → returns LangChain/LlamaIndex-ready text chunks."
     ),
 )
 
@@ -358,6 +379,80 @@ async def export_dataset(
     """
     data = await tools_export.run(_get_client(), dataset_id, format)
     return ExportResult.model_validate(data)
+
+
+# ---------------------------------------------------------------------------
+# Tool 7: index_dataset
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="dataset.index",
+    title="Index Dataset for RAG",
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def index_dataset(dataset_id: int) -> IndexResult:
+    """Trigger semantic indexing for a dataset — required before using dataset.chunks (Pro+ plan).
+
+    Starts an async indexing job that splits the dataset into RAG-ready text chunks,
+    generates embeddings, and stores them for semantic search. Indexing is idempotent:
+    calling it again on an already-indexed dataset re-indexes with fresh embeddings.
+    Indexing typically completes in 10–60 seconds depending on dataset size.
+    After indexing, use dataset.chunks(dataset_id) to retrieve the text chunks.
+
+    Args:
+        dataset_id: ID of the built dataset to index (from job.status after dataset.build).
+    """
+    data = await tools_index.run(_get_client(), dataset_id)
+    return IndexResult.model_validate(data)
+
+
+# ---------------------------------------------------------------------------
+# Tool 8: list_chunks
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="dataset.chunks",
+    title="List RAG Chunks",
+    annotations=ToolAnnotations(
+        readOnlyHint=True,
+        idempotentHint=True,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def list_chunks(
+    dataset_id: int,
+    min_quality: str = "B",
+    pii_masked_only: bool = False,
+    page: int = 1,
+    page_size: int = 20,
+) -> ChunksResult:
+    """Retrieve LangChain/LlamaIndex-ready text chunks from an indexed dataset (Pro+ plan).
+
+    Returns paginated RAG chunks. Each chunk includes text, token count, and metadata
+    (quality grade, PII masking status, document type, language). Use FlexOrchRetriever
+    or FlexOrchReader from the flexorch-sdk for automatic pagination.
+    The dataset must be indexed first via dataset.index(dataset_id).
+
+    Args:
+        dataset_id:     ID of the indexed dataset.
+        min_quality:    Minimum quality grade to include: A, B, C, or D. Default: B.
+                        Chunks with grade at or above this threshold are returned.
+                        Example: "B" returns grade A and B chunks.
+        pii_masked_only: When true, return only chunks where PII was masked. Default: false.
+        page:           Page number, 1-indexed. Default: 1.
+        page_size:      Chunks per page, max 100. Default: 20.
+    """
+    data = await tools_chunks.run(
+        _get_client(), dataset_id, min_quality, pii_masked_only, page, page_size
+    )
+    return ChunksResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------

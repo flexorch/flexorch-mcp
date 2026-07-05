@@ -1,7 +1,7 @@
 {
   "serverInfo": {
     "name": "flexorch-mcp",
-    "version": "0.1.9"
+    "version": "0.2.0"
   },
   "authentication": {
     "required": true,
@@ -206,6 +206,72 @@
       },
       "annotations": {
         "title": "Export Dataset",
+        "readOnlyHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "dataset.index",
+      "title": "Index Dataset for RAG",
+      "description": "Trigger semantic indexing for a dataset (Pro+ plan required). Must be called before dataset.chunks. Indexing is idempotent and typically completes in 10–60 seconds.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {"type": "integer", "description": "ID of the built dataset to index (from job.status after dataset.build)"}
+        },
+        "required": ["dataset_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {"type": "integer"},
+          "status": {"type": "string"},
+          "message": {"type": "string"},
+          "index_hint": {"type": "string"},
+          "isError": {"type": "boolean"},
+          "error": {"type": "string"}
+        }
+      },
+      "annotations": {
+        "title": "Index Dataset for RAG",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "dataset.chunks",
+      "title": "List RAG Chunks",
+      "description": "Retrieve LangChain/LlamaIndex-ready text chunks from an indexed dataset (Pro+ plan required). Dataset must be indexed first via dataset.index.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {"type": "integer", "description": "ID of the indexed dataset"},
+          "min_quality": {"type": "string", "default": "B", "description": "Minimum quality grade to include: A, B, C, or D. B returns A and B grade chunks."},
+          "pii_masked_only": {"type": "boolean", "default": false, "description": "When true, return only chunks where PII was masked"},
+          "page": {"type": "integer", "default": 1, "description": "Page number, 1-indexed"},
+          "page_size": {"type": "integer", "default": 20, "description": "Chunks per page, max 100"}
+        },
+        "required": ["dataset_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "dataset_id": {"type": "integer"},
+          "chunks": {"type": "array"},
+          "chunk_count": {"type": "integer"},
+          "total": {"type": "integer"},
+          "page": {"type": "integer"},
+          "page_size": {"type": "integer"},
+          "has_more": {"type": "boolean"},
+          "isError": {"type": "boolean"},
+          "error": {"type": "string"}
+        }
+      },
+      "annotations": {
+        "title": "List RAG Chunks",
         "readOnlyHint": true,
         "idempotentHint": true,
         "openWorldHint": false

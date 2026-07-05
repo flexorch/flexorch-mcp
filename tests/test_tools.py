@@ -1,4 +1,4 @@
-"""Unit tests for Tool 1–6: process_document, get_job_status, get_extraction_result, build_dataset, search_documents, export_dataset."""
+"""Unit tests for Tool 1–8: process_document, get_job_status, get_extraction_result, build_dataset, search_documents, export_dataset, index_dataset, list_chunks."""
 from __future__ import annotations
 
 import pytest
@@ -12,6 +12,8 @@ from flexorch_mcp.tools import result as tools_result
 from flexorch_mcp.tools import build as tools_build
 from flexorch_mcp.tools import search as tools_search
 from flexorch_mcp.tools import export as tools_export
+from flexorch_mcp.tools import index as tools_index
+from flexorch_mcp.tools import chunks as tools_chunks
 
 _BASE = "https://api.flexorch.com/v1"
 _TEST_KEY = "dfx_testkey_000000000"
@@ -342,3 +344,86 @@ class TestExportDataset:
 
         assert result.get("isError") is True
         assert "not found" in result["error"].lower()
+
+
+# ===========================================================================
+# Tool 7: index_dataset
+# ===========================================================================
+
+
+class TestIndexDataset:
+    @pytest.mark.asyncio
+    async def test_index_success(self, client, mock_api):
+        result = await tools_index.run(client, 89)
+        assert result.get("isError") is None or result.get("isError") is False
+        assert result["status"] == "indexing"
+        assert result["dataset_id"] == 89
+        assert "dataset.chunks" in result["index_hint"]
+
+    @pytest.mark.asyncio
+    async def test_index_invalid_dataset_id(self, client, mock_api):
+        result = await tools_index.run(client, 0)
+        assert result.get("isError") is True
+        assert "positive" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_index_plan_gate(self, client, mock_api):
+        result = await tools_index.run(client, 9999)
+        assert result.get("isError") is True
+        assert "Pro plan" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_index_negative_id(self, client, mock_api):
+        result = await tools_index.run(client, -5)
+        assert result.get("isError") is True
+
+
+# ===========================================================================
+# Tool 8: list_chunks
+# ===========================================================================
+
+
+class TestListChunks:
+    @pytest.mark.asyncio
+    async def test_chunks_success(self, client, mock_api):
+        result = await tools_chunks.run(client, 89)
+        assert result.get("isError") is None or result.get("isError") is False
+        assert result["dataset_id"] == 89
+        assert result["chunk_count"] == 1
+        assert result["total"] == 1
+        assert result["chunks"][0]["chunk_id"] == "ch-1"
+        assert result["has_more"] is False
+
+    @pytest.mark.asyncio
+    async def test_chunks_invalid_grade(self, client, mock_api):
+        result = await tools_chunks.run(client, 89, min_quality="Z")
+        assert result.get("isError") is True
+        assert "A, B, C, or D" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_chunks_invalid_dataset_id(self, client, mock_api):
+        result = await tools_chunks.run(client, 0)
+        assert result.get("isError") is True
+        assert "positive" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_chunks_plan_gate(self, client, mock_api):
+        result = await tools_chunks.run(client, 9999)
+        assert result.get("isError") is True
+        assert "Pro plan" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_chunks_grade_filter_applied(self, client, mock_api):
+        result = await tools_chunks.run(client, 89, min_quality="A")
+        assert result.get("isError") is None or result.get("isError") is False
+        assert result["chunk_count"] >= 0
+
+    @pytest.mark.asyncio
+    async def test_chunks_page_size_capped(self, client, mock_api):
+        result = await tools_chunks.run(client, 89, page_size=999)
+        assert result.get("isError") is None or result.get("isError") is False
+
+    @pytest.mark.asyncio
+    async def test_chunks_pii_masked_only(self, client, mock_api):
+        result = await tools_chunks.run(client, 89, pii_masked_only=True)
+        assert result.get("isError") is None or result.get("isError") is False

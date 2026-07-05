@@ -4,6 +4,17 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.0] — 2026-07-05
+
+### Added
+- `dataset.index` (Tool 7) — trigger semantic vector indexing for a dataset (Pro+ plan required); returns status + `index_hint` prompt for next step
+- `dataset.chunks` (Tool 8) — retrieve paginated RAG-ready text chunks from an indexed dataset; supports `min_quality` (A/B/C/D), `pii_masked_only`, `page`, `page_size` (max 100); Pro+ plan required
+- `IndexResult` and `ChunksResult` Pydantic output models for structured MCP responses
+- `server-card.json` updated to reflect 8 tools and v0.2.0
+- Total tool count: **8** (was 6)
+
+---
+
 ## [0.1.9] — 2026-06-28
 
 ### Fixed
