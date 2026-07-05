@@ -8,6 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![flexorch-mcp MCP server](https://glama.ai/mcp/servers/flexorch/flexorch-mcp/badges/card.svg)](https://glama.ai/mcp/servers/flexorch/flexorch-mcp)
+[![Glama score](https://glama.ai/mcp/servers/flexorch/flexorch-mcp/badges/score.svg)](https://glama.ai/mcp/servers/flexorch/flexorch-mcp)
 
 **MCP server for FlexOrch — SDK for machines.**
 
