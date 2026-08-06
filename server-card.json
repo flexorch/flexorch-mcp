@@ -1,7 +1,7 @@
 {
   "serverInfo": {
     "name": "flexorch-mcp",
-    "version": "0.2.0"
+    "version": "0.2.1"
   },
   "authentication": {
     "required": true,
@@ -65,6 +65,7 @@
           "pii_masked": {"type": "boolean"},
           "pii_count": {"type": "integer"},
           "has_dataset": {"type": "boolean"},
+          "degraded": {"type": "boolean", "description": "True when the underlying execution completed but structured extraction found no table/schema in the document — quality/PII results are still valid, but build_dataset() will not apply"},
           "stage": {"type": "string"},
           "reason": {"type": "string"},
           "poll_hint": {"type": "string"},
@@ -100,6 +101,7 @@
           "privacy": {"type": "object"},
           "row_count": {"type": "integer"},
           "columns": {"type": "array", "items": {"type": "string"}},
+          "degraded": {"type": "boolean", "description": "True when structured extraction found no table/schema in this document — quality/privacy above are still valid"},
           "fields": {"type": "array"},
           "fields_hint": {"type": "string"},
           "has_more": {"type": "boolean"},

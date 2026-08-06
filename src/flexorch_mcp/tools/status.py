@@ -63,11 +63,26 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
         quality: dict[str, Any] = ps.get("quality") or {}
         privacy: dict[str, Any] = ps.get("privacy") or {}
         execution_id: int | None = ps.get("execution_id")
+        exec_summary: dict[str, Any] = job.get("execution_summary") or {}
+        degraded: bool = bool(exec_summary.get("degraded", False))
+
+        poll_hint = (
+            f"Processing complete. Use get_extraction_result({execution_id}) "
+            "to retrieve structured fields and quality details."
+        )
+        if degraded:
+            poll_hint += (
+                " Note: degraded=true — structured extraction did not find a "
+                "table/schema in this document; quality/PII results are still "
+                "valid but there are no structured fields (build_dataset() will "
+                "not apply)."
+            )
 
         return {
             "job_id": job_id,
             "status": "completed",
             "execution_id": execution_id,
+            "degraded": degraded,
             "quality_grade": quality.get("grade"),
             "quality_score": quality.get("score"),
             "pii_found": bool(privacy.get("pii_findings_count", 0)),
@@ -75,10 +90,7 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
             "pii_count": privacy.get("pii_findings_count", 0),
             "row_count": ps.get("row_count"),
             "has_dataset": bool(ps.get("has_dataset", False)),
-            "poll_hint": (
-                f"Processing complete. Use get_extraction_result({execution_id}) "
-                "to retrieve structured fields and quality details."
-            ),
+            "poll_hint": poll_hint,
         }
 
     # Unknown status — pass through

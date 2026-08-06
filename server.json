@@ -7,7 +7,7 @@
     "url": "https://github.com/flexorch/flexorch-mcp",
     "source": "github"
   },
-  "version": "0.2.0",
+  "version": "0.2.1",
   "remotes": [
     {
       "transportType": "http",
@@ -18,7 +18,7 @@
     {
       "registryType": "pypi",
       "identifier": "flexorch-mcp",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },

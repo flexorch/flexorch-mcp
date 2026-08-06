@@ -51,6 +51,7 @@ class JobStatusResult(_Base):
     pii_masked: bool | None = None
     pii_count: int | None = None
     has_dataset: bool | None = None
+    degraded: bool | None = None
     stage: str | None = None
     reason: str | None = None
     poll_hint: str | None = None
@@ -75,6 +76,7 @@ class ExtractionResult(_Base):
     privacy: _PrivacyInfo | None = None
     row_count: int | None = None
     columns: list[str] = []
+    degraded: bool | None = None
     fields: list[Any] | None = None
     fields_hint: str | None = None
     has_more: bool | None = None

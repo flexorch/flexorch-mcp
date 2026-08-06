@@ -116,7 +116,20 @@ class TestGetJobStatus:
         assert result["pii_masked"] is True
         assert result["pii_count"] == 2
         assert result["row_count"] == 12
+        assert result["degraded"] is False
         assert "get_extraction_result(501)" in result["poll_hint"]
+
+    @pytest.mark.asyncio
+    async def test_degraded_completed_data_process_job(self, client, mock_api):
+        result = await tools_status.run(client, 1005)
+        assert result["status"] == "completed"
+        assert result["degraded"] is True
+        assert result["execution_id"] == 505
+        # Still a real quality/PII result despite no structured rows.
+        assert result["pii_found"] is True
+        assert result["row_count"] == 0
+        assert "degraded=true" in result["poll_hint"]
+        assert "will not apply" in result["poll_hint"]
 
     @pytest.mark.asyncio
     async def test_running_job_with_stage(self, client, mock_api):
@@ -177,6 +190,19 @@ class TestGetExtractionResult:
         assert "fields" not in result
         assert "fields_hint" in result
         assert "build_dataset" in result["fields_hint"]
+        assert result["degraded"] is False
+
+    @pytest.mark.asyncio
+    async def test_degraded_execution_hints_not_to_build_dataset(self, client, mock_api):
+        result = await tools_result.run(client, 505)
+        assert result["degraded"] is True
+        assert result["row_count"] == 0
+        assert "fields" not in result
+        # Quality/privacy are still meaningful even though extraction was degraded.
+        assert result["quality"]["grade"] == "D"
+        assert result["privacy"]["pii_findings_count"] == 1
+        assert "degraded=true" in result["fields_hint"]
+        assert "not applicable" in result["fields_hint"]
 
     @pytest.mark.asyncio
     async def test_execution_with_records_returns_all_rows(self, client, mock_api):

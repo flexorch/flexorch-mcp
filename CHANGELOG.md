@@ -4,6 +4,14 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.1] — 2026-08-06
+
+### Added
+- `get_job_status` (Tool 2) — `degraded` field on completed `data_process` results. `true` when the underlying pipeline execution completed but structured extraction found no table/schema in the document (e.g. a short or non-tabular document). Quality/PII results are still meaningful. `poll_hint` now includes a note that `build_dataset()` doesn't apply when degraded.
+- `get_extraction_result` (Tool 3) — `degraded` field on the response. When degraded and there are no records, `fields_hint` explains why instead of suggesting `build_dataset()` (which would fail with `NO_OUTPUT_DATA`).
+
+---
+
 ## [0.2.0] — 2026-07-05
 
 ### Added

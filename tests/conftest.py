@@ -34,6 +34,32 @@ _JOB_COMPLETED = {
     "error": None,
 }
 
+_JOB_DEGRADED_COMPLETED = {
+    "status": "success",
+    "data": {
+        "id": 1005,
+        "job_type": "data_process",
+        "status": "completed",
+        "result_meta": {},
+        "error": None,
+        "processing_summary": {
+            "execution_id": 505,
+            "quality": {"grade": "D", "score": 0.0, "warnings": []},
+            "privacy": {"pii_findings_count": 1, "privacy_applied": True, "masked_record_count": 1},
+            "row_count": 0,
+            "has_dataset": False,
+        },
+        "execution_summary": {
+            "execution_id": 505,
+            "status": "completed",
+            "degraded": True,
+            "failure_reason": None,
+            "privacy": {"pii_findings_count": 1, "privacy_applied": True, "masked_record_count": 1},
+        },
+    },
+    "error": None,
+}
+
 _JOB_RUNNING = {
     "status": "success",
     "data": {
@@ -84,11 +110,47 @@ _JOB_DATASET_BUILD_COMPLETED = {
     "error": None,
 }
 
+_EXECUTION_DEGRADED = {
+    "status": "success",
+    "data": {
+        "id": 505,
+        "status": "completed",
+        "degraded": True,
+        "result_meta": {
+            "document_type": "unknown",
+            "detected_language": "en",
+            "grade": "D",
+            "score": 0,
+            "warnings": [],
+            "privacy_applied": True,
+            "pii_findings_count": 1,
+            "step_failures": [
+                {"step": "route_extraction", "error_type": "RuntimeError", "error": "No engine succeeded"},
+            ],
+        },
+        "privacy": {
+            "pii_findings_count": 1,
+            "privacy_applied": True,
+            "masked_record_count": 1,
+        },
+        "output_summary": {
+            "row_count": 0,
+            "column_count": 0,
+            "columns": [],
+            "pii_type_summary": {"email": 1},
+        },
+        "records": [],
+        "dataset": None,
+    },
+    "error": None,
+}
+
 _EXECUTION_NO_DATASET = {
     "status": "success",
     "data": {
         "id": 501,
         "status": "completed",
+        "degraded": False,
         "result_meta": {
             "document_type": "invoice",
             "detected_language": "tr",
@@ -120,6 +182,7 @@ _EXECUTION_WITH_DATASET = {
     "data": {
         "id": 502,
         "status": "completed",
+        "degraded": False,
         "result_meta": {
             "document_type": "invoice",
             "detected_language": "tr",
@@ -196,10 +259,12 @@ def mock_api():
         router.get("/jobs/1002").mock(return_value=httpx.Response(200, json=_JOB_RUNNING))
         router.get("/jobs/1003").mock(return_value=httpx.Response(200, json=_JOB_FAILED))
         router.get("/jobs/1004").mock(return_value=httpx.Response(200, json=_JOB_DATASET_BUILD_COMPLETED))
+        router.get("/jobs/1005").mock(return_value=httpx.Response(200, json=_JOB_DEGRADED_COMPLETED))
 
         # GET /executions/{id}
         router.get("/executions/501").mock(return_value=httpx.Response(200, json=_EXECUTION_NO_DATASET))
         router.get("/executions/502").mock(return_value=httpx.Response(200, json=_EXECUTION_WITH_DATASET))
+        router.get("/executions/505").mock(return_value=httpx.Response(200, json=_EXECUTION_DEGRADED))
 
         # GET /datasets/89/rows
         router.get("/datasets/89/rows").mock(return_value=httpx.Response(200, json=_DATASET_ROWS))

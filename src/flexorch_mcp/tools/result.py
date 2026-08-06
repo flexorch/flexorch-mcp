@@ -21,6 +21,7 @@ async def run(client: FlexOrchMCPClient, execution_id: int) -> dict[str, Any]:
     output_summary: dict[str, Any] = exec_data.get("output_summary") or {}
     records: list[dict[str, Any]] = exec_data.get("records") or []
     dataset_info: dict[str, Any] | None = exec_data.get("dataset")
+    degraded: bool = bool(exec_data.get("degraded", False))
 
     document_type = result_meta.get("document_type") or exec_data.get("document_type")
     detected_language = result_meta.get("detected_language")
@@ -46,6 +47,7 @@ async def run(client: FlexOrchMCPClient, execution_id: int) -> dict[str, Any]:
         "privacy": privacy,
         "row_count": row_count,
         "columns": columns,
+        "degraded": degraded,
     }
 
     if records:
@@ -58,6 +60,17 @@ async def run(client: FlexOrchMCPClient, execution_id: int) -> dict[str, Any]:
                 f"Showing first {_RECORDS_PREVIEW_LIMIT} of {len(records)} records. "
                 f"Call export_dataset({id_hint}, format='jsonl') to retrieve all records at once."
             )
+    elif degraded:
+        # Structured extraction did not find a table/schema in this document
+        # (e.g. a short or non-tabular document) — the execution still
+        # succeeded and quality/privacy above are meaningful, but there are
+        # no structured fields to build a dataset from. Don't suggest
+        # build_dataset here — it would fail with NO_OUTPUT_DATA.
+        result["fields_hint"] = (
+            "No structured fields were extracted from this document (degraded=true) — "
+            "it likely isn't table/form-shaped. Quality and privacy results above are "
+            "still valid. build_dataset() is not applicable here."
+        )
     else:
         result["fields_hint"] = (
             "Field values are available after building a dataset. "

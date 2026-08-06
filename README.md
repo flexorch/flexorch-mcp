@@ -35,6 +35,8 @@ Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorc
 | `dataset.build` | Build a structured dataset from a completed execution |
 | `dataset.search` | Semantic search across indexed datasets (Pro+) |
 | `dataset.export` | Export a dataset as JSONL, CSV, JSON, XML, MD, or RAG (LangChain/LlamaIndex chunks) |
+| `dataset.index` | Trigger semantic vector indexing for a dataset (Pro+) |
+| `dataset.chunks` | Retrieve paginated RAG-ready text chunks from an indexed dataset (Pro+) |
 
 ---
 
@@ -106,7 +108,7 @@ flexorch-mcp --check
 # → FlexOrch API key: dfx_xxx*** ✓
 # → Connection: OK (api.flexorch.com)
 # → Plan: Starter (1,200 credits/mo)
-# → Tools: 6 registered
+# → Tools: 8 registered
 ```
 
 ---
