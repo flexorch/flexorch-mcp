@@ -63,8 +63,8 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
         quality: dict[str, Any] = ps.get("quality") or {}
         privacy: dict[str, Any] = ps.get("privacy") or {}
         execution_id: int | None = ps.get("execution_id")
-        exec_summary: dict[str, Any] = job.get("execution_summary") or {}
-        degraded: bool = bool(exec_summary.get("degraded", False))
+        completed_exec_summary: dict[str, Any] = job.get("execution_summary") or {}
+        degraded: bool = bool(completed_exec_summary.get("degraded", False))
 
         poll_hint = (
             f"Processing complete. Use get_extraction_result({execution_id}) "
