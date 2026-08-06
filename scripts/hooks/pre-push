@@ -1,0 +1,19 @@
+#!/bin/sh
+# Mirrors .github/workflows/ci.yml exactly (pytest + mypy) so a push that
+# would fail CI is caught locally first. Added after commit bc73a0b passed
+# pytest locally but failed CI's mypy step (a variable redefinition mypy
+# catches with strict=true that pytest has no way to see).
+#
+# This file is the tracked source of truth. It is not itself a git hook —
+# run scripts/install-git-hooks.sh once after cloning to install it into
+# .git/hooks/pre-push (git does not run hooks from anywhere else).
+
+set -e
+
+echo "pre-push: running pytest tests/ -v ..."
+python -m pytest tests/ -v
+
+echo "pre-push: running mypy src/ ..."
+python -m mypy src/
+
+echo "pre-push: all checks passed."
