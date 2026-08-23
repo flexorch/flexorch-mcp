@@ -54,7 +54,10 @@ Requires Python 3.10+.
 
 ### Claude Desktop
 
-Add to `~/.claude/claude_desktop_config.json`:
+Add to your Claude Desktop config file (create it if it doesn't exist):
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
