@@ -14,6 +14,7 @@ from flexorch_mcp.tools import search as tools_search
 from flexorch_mcp.tools import export as tools_export
 from flexorch_mcp.tools import index as tools_index
 from flexorch_mcp.tools import chunks as tools_chunks
+from flexorch_mcp.server import _run_check
 
 _BASE = "https://api.flexorch.com/v1"
 _TEST_KEY = "dfx_testkey_000000000"
@@ -453,3 +454,27 @@ class TestListChunks:
     async def test_chunks_pii_masked_only(self, client, mock_api):
         result = await tools_chunks.run(client, 89, pii_masked_only=True)
         assert result.get("isError") is None or result.get("isError") is False
+
+
+# ===========================================================================
+# CLI: --check diagnostic (_run_check)
+# ===========================================================================
+
+
+class TestRunCheck:
+    @pytest.mark.asyncio
+    async def test_check_reports_ok_with_correct_plan_and_limit(self, mock_api, monkeypatch, capsys):
+        monkeypatch.setenv("FLEXORCH_API_KEY", _TEST_KEY)
+        code = await _run_check()
+        out = capsys.readouterr().out
+        assert code == 0
+        assert "Connection       : OK" in out
+        assert "Starter (1,200 credits/mo)" in out
+
+    @pytest.mark.asyncio
+    async def test_check_missing_api_key_fails_without_request(self, monkeypatch, capsys):
+        monkeypatch.delenv("FLEXORCH_API_KEY", raising=False)
+        code = await _run_check()
+        err = capsys.readouterr().err
+        assert code == 1
+        assert "not set" in err

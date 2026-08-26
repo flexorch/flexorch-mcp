@@ -4,6 +4,13 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.2] — 2026-08-26
+
+### Fixed
+- `--check` — was calling a non-existent endpoint (`/usage/current`) and always failed with a 404, even with a valid API key and working connection. Now calls the correct `GET /usage`.
+- `--check` — even past the wrong path, the response envelope was never unwrapped and `plan`/`credits_limit` were read from the wrong (non-existent) keys, so a successful call still printed `Plan: Unknown (0 credits/mo)`. Now reads `data.plan` and `data.usage.credits.limit` correctly.
+- `--check` — printing the ✓/✗ status glyphs crashed with `UnicodeEncodeError` on Windows terminals using a non-UTF-8 codepage (the common default). `--check` now reconfigures stdout/stderr to UTF-8 before printing.
+
 ## [0.2.1] — 2026-08-06
 
 ### Added

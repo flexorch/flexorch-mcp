@@ -395,20 +395,24 @@ def mock_api():
             )
         )
 
-        # GET /usage/current  — for --check
-        router.get("/usage/current").mock(
+        # GET /usage — for --check. Shape matches GET /v1/usage exactly
+        # (app/routes/usage.py + get_usage_summary()): plan/trial/usage.credits,
+        # NOT a flat credits_used/credits_limit shape.
+        router.get("/usage").mock(
             return_value=httpx.Response(
                 200,
                 json={
                     "status": "success",
                     "data": {
                         "plan": "starter",
-                        "credits_used": 42,
-                        "credits_limit": 1200,
-                        "credits_remaining": 1158,
-                        "reset_at": "2026-07-01T00:00:00Z",
-                        "period_start": "2026-06-01T00:00:00Z",
-                        "period_end": "2026-07-01T00:00:00Z",
+                        "trial": None,
+                        "usage": {
+                            "credits": {
+                                "used": 42,
+                                "limit": 1200,
+                                "remaining": 1158,
+                            },
+                        },
                     },
                     "error": None,
                 },

@@ -463,6 +463,16 @@ async def list_chunks(
 
 async def _run_check() -> int:
     """Validate API key and connectivity; print status report. Returns exit code."""
+    # Windows terminals often default to a non-UTF-8 codepage (e.g. cp1252),
+    # which can't encode the ✓/✗ glyphs below and would crash mid-print.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
     api_key = os.environ.get("FLEXORCH_API_KEY", "")
     if not api_key:
         print("✗ FLEXORCH_API_KEY is not set.", file=sys.stderr)
@@ -472,9 +482,10 @@ async def _run_check() -> int:
 
     client = FlexOrchMCPClient(api_key)
     try:
-        data: dict[str, Any] = await client.get("/usage/current")
+        response: dict[str, Any] = await client.get("/usage")
+        data: dict[str, Any] = response.get("data", response)
         plan: str = data.get("plan", "unknown")
-        limit: int = data.get("credits_limit", 0)
+        limit: int = (data.get("usage") or {}).get("credits", {}).get("limit") or 0
         print("Connection       : OK (api.flexorch.com) ✓")
         print(f"Plan             : {plan.capitalize()} ({limit:,} credits/mo)")
         print(f"Tools            : {_TOOLS_COUNT} registered")
