@@ -4,6 +4,13 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.5] — 2026-09-03
+
+### Fixed
+- **HTTP transport (`mcp.flexorch.com`) rejected every request with `421 Invalid Host header`.** `FastMCP(...)` was constructed without an explicit `host`, defaulting to `"127.0.0.1"` — the `mcp` SDK auto-enables DNS-rebinding protection whenever `host` is `127.0.0.1`/`localhost`/`::1`, allowlisting only those Host header values. That protection is meant for local dev servers reachable from a browser; it doesn't fit this deployment (API-key authenticated, public, behind Cloudflare/Caddy) and started rejecting all real traffic once a routine `mcp` dependency bump made the behavior take effect. Fixed by passing `host="0.0.0.0"`, matching the actual uvicorn bind address in `_run_http()`, which keeps the SDK's auto-enable condition from triggering.
+
+---
+
 ## [0.2.4] — 2026-09-03
 
 ### Added

@@ -156,6 +156,16 @@ def _get_client() -> FlexOrchMCPClient:
 
 mcp = FastMCP(
     "flexorch",
+    # Must match the uvicorn bind host in _run_http() below. The mcp SDK
+    # auto-enables DNS-rebinding protection (Host header allowlisted to
+    # 127.0.0.1/localhost/::1 only) whenever host is unset — its default is
+    # "127.0.0.1", which silently triggered this for our public HTTP
+    # deployment and made every request to mcp.flexorch.com 421 "Invalid
+    # Host header". That protection targets local dev servers reachable
+    # from a browser; it doesn't apply to this transport (API-key
+    # authenticated, stdio-only for local MCP clients, HTTP only for the
+    # public server behind Cloudflare/Caddy).
+    host="0.0.0.0",
     instructions=(
         "FlexOrch converts unstructured documents (PDF, DOCX, invoices, contracts, payroll, etc.) "
         "into structured, LLM-ready datasets with PII masking and quality scoring. "
