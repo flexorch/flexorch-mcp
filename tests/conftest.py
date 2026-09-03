@@ -30,6 +30,16 @@ _JOB_COMPLETED = {
             "row_count": 12,
             "has_dataset": False,
         },
+        "execution_summary": {
+            "execution_id": 501,
+            "status": "completed",
+            "degraded": False,
+            "failure_reason": None,
+            "privacy": {
+                "pii_findings_count": 2, "privacy_applied": True, "masked_record_count": 2,
+                "pii_type_summary": {"email": 1, "national_id_tr": 1},
+            },
+        },
     },
     "error": None,
 }
@@ -54,7 +64,10 @@ _JOB_DEGRADED_COMPLETED = {
             "status": "completed",
             "degraded": True,
             "failure_reason": None,
-            "privacy": {"pii_findings_count": 1, "privacy_applied": True, "masked_record_count": 1},
+            "privacy": {
+                "pii_findings_count": 1, "privacy_applied": True, "masked_record_count": 1,
+                "pii_type_summary": {"phone_tr": 1},
+            },
         },
     },
     "error": None,

@@ -34,6 +34,9 @@ async def run(client: FlexOrchMCPClient, execution_id: int) -> dict[str, Any]:
     privacy: dict[str, Any] = {
         "pii_findings_count": privacy_block.get("pii_findings_count", 0),
         "pii_masked": bool(privacy_block.get("privacy_applied", False)),
+        # Per-type breakdown lives under output_summary, not privacy, on
+        # GET /v1/executions/{id} — e.g. {"email": 2, "national_id_tr": 1}.
+        "pii_type_summary": output_summary.get("pii_type_summary") or {},
     }
 
     columns: list[str] = output_summary.get("columns") or []

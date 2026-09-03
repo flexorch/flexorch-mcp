@@ -1,7 +1,7 @@
 {
   "serverInfo": {
     "name": "flexorch-mcp",
-    "version": "0.2.2"
+    "version": "0.2.3"
   },
   "authentication": {
     "required": true,
@@ -64,6 +64,7 @@
           "pii_found": {"type": "boolean"},
           "pii_masked": {"type": "boolean"},
           "pii_count": {"type": "integer"},
+          "pii_type_summary": {"type": "object", "additionalProperties": {"type": "integer"}, "description": "Count of each PII type found, e.g. {\"email\": 2, \"national_id_tr\": 1}"},
           "has_dataset": {"type": "boolean"},
           "degraded": {"type": "boolean", "description": "True when the underlying execution completed but structured extraction found no table/schema in the document — quality/PII results are still valid, but build_dataset() will not apply"},
           "stage": {"type": "string"},

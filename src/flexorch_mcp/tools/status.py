@@ -61,10 +61,14 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
         # data_process job
         ps: dict[str, Any] = job.get("processing_summary") or {}
         quality: dict[str, Any] = ps.get("quality") or {}
-        privacy: dict[str, Any] = ps.get("privacy") or {}
         execution_id: int | None = ps.get("execution_id")
         completed_exec_summary: dict[str, Any] = job.get("execution_summary") or {}
         degraded: bool = bool(completed_exec_summary.get("degraded", False))
+        # execution_summary.privacy is computed fresh on every GET /jobs/{id}
+        # read and has pii_type_summary; processing_summary.privacy is frozen
+        # at job-completion time and never got that field. Prefer the former,
+        # falling back to the latter only if execution_summary is missing.
+        privacy: dict[str, Any] = completed_exec_summary.get("privacy") or ps.get("privacy") or {}
 
         poll_hint = (
             f"Processing complete. Use get_extraction_result({execution_id}) "
@@ -88,6 +92,7 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
             "pii_found": bool(privacy.get("pii_findings_count", 0)),
             "pii_masked": bool(privacy.get("privacy_applied", False)),
             "pii_count": privacy.get("pii_findings_count", 0),
+            "pii_type_summary": privacy.get("pii_type_summary") or {},
             "row_count": ps.get("row_count"),
             "has_dataset": bool(ps.get("has_dataset", False)),
             "poll_hint": poll_hint,

@@ -4,6 +4,13 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.3] — 2026-09-03
+
+### Added
+- `get_job_status` and `get_extraction_result` now include `pii_type_summary` — a per-type breakdown of detected PII (e.g. `{"email": 2, "national_id_tr": 1}`), covering all 47 PII types the platform detects. Previously only aggregate `pii_found`/`pii_masked`/`pii_count` were surfaced; the type-level detail was already on the API (`output_summary.pii_type_summary` on `GET /executions/{id}`) but neither tool read it. `get_job_status` needed a companion backend fix (`execution_summary.privacy.pii_type_summary` on `GET /jobs/{id}`, `flexorch-core` 2026-09-03) since the job endpoint never had this field to relay at all.
+
+---
+
 ## [0.2.2] — 2026-08-26
 
 ### Fixed

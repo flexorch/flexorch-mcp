@@ -116,6 +116,7 @@ class TestGetJobStatus:
         assert result["pii_found"] is True
         assert result["pii_masked"] is True
         assert result["pii_count"] == 2
+        assert result["pii_type_summary"] == {"email": 1, "national_id_tr": 1}
         assert result["row_count"] == 12
         assert result["degraded"] is False
         assert "get_extraction_result(501)" in result["poll_hint"]
@@ -128,6 +129,7 @@ class TestGetJobStatus:
         assert result["execution_id"] == 505
         # Still a real quality/PII result despite no structured rows.
         assert result["pii_found"] is True
+        assert result["pii_type_summary"] == {"phone_tr": 1}
         assert result["row_count"] == 0
         assert "degraded=true" in result["poll_hint"]
         assert "will not apply" in result["poll_hint"]
@@ -187,6 +189,7 @@ class TestGetExtractionResult:
         assert result["quality"]["grade"] == "A"
         assert result["quality"]["score"] == 91.0
         assert result["privacy"]["pii_findings_count"] == 2
+        assert result["privacy"]["pii_type_summary"] == {"email": 1, "national_id_tr": 1}
         assert "invoice_number" in result["columns"]
         assert "fields" not in result
         assert "fields_hint" in result
@@ -202,6 +205,7 @@ class TestGetExtractionResult:
         # Quality/privacy are still meaningful even though extraction was degraded.
         assert result["quality"]["grade"] == "D"
         assert result["privacy"]["pii_findings_count"] == 1
+        assert result["privacy"]["pii_type_summary"] == {"email": 1}
         assert "degraded=true" in result["fields_hint"]
         assert "not applicable" in result["fields_hint"]
 
