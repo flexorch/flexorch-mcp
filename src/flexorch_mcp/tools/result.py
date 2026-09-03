@@ -44,6 +44,7 @@ async def run(client: FlexOrchMCPClient, execution_id: int) -> dict[str, Any]:
 
     result: dict[str, Any] = {
         "execution_id": execution_id,
+        "document_id": exec_data.get("document_id"),
         "document_type": document_type,
         "detected_language": detected_language,
         "quality": quality,

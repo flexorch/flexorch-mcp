@@ -30,6 +30,7 @@ Connect Claude and other MCP-compatible agents to the [FlexOrch](https://flexorc
 | Tool | Description |
 |------|-------------|
 | `document.process` | Upload and process a document (PDF, DOCX, TXT, XLSX, HTML, XML, EML, JPG, PNG, TIFF) |
+| `document.reprocess` | Re-queue an already-uploaded document through the pipeline |
 | `job.status` | Poll a processing job until completed or failed |
 | `job.result` | Get structured extracted fields from a completed job |
 | `dataset.build` | Build a structured dataset from a completed execution |
@@ -111,7 +112,7 @@ flexorch-mcp --check
 # → FlexOrch API key: dfx_xxx*** ✓
 # → Connection: OK (api.flexorch.com)
 # → Plan: Starter (1,200 credits/mo)
-# → Tools: 8 registered
+# → Tools: 9 registered
 ```
 
 ---

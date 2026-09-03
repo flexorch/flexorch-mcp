@@ -30,6 +30,20 @@ FLEXORCH_ERRORS: dict[str, str] = {
     "VALIDATION_ERROR": (
         "Invalid request parameters. Check the values passed to this tool."
     ),
+    "DOCUMENT_NOT_FOUND": (
+        "Document not found. Verify the document_id is correct."
+    ),
+    "DOCUMENT_FILE_NOT_AVAILABLE": (
+        "The original file for this document is no longer available on the server. "
+        "Re-upload it with document.process instead of reprocessing."
+    ),
+    "REPROCESS_NOT_SUPPORTED": (
+        "This document was sourced from a connector (e.g. S3) and cannot be reprocessed. "
+        "Re-run the sync or upload it directly with document.process."
+    ),
+    "REPROCESS_FAILED": (
+        "Reprocessing could not be queued. Check the document_id and retry."
+    ),
 }
 
 _DEFAULT_ERROR = "An error occurred. Visit app.flexorch.com for support."

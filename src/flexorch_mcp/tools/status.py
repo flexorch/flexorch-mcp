@@ -86,6 +86,7 @@ async def run(client: FlexOrchMCPClient, job_id: int) -> dict[str, Any]:
             "job_id": job_id,
             "status": "completed",
             "execution_id": execution_id,
+            "document_id": ps.get("document_id"),
             "degraded": degraded,
             "quality_grade": quality.get("grade"),
             "quality_score": quality.get("score"),

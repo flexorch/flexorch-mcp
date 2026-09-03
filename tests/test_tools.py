@@ -1,4 +1,4 @@
-"""Unit tests for Tool 1–8: process_document, get_job_status, get_extraction_result, build_dataset, search_documents, export_dataset, index_dataset, list_chunks."""
+"""Unit tests for Tool 1–9: process_document, get_job_status, get_extraction_result, build_dataset, search_documents, export_dataset, index_dataset, list_chunks, reprocess_document."""
 from __future__ import annotations
 
 import pytest
@@ -14,6 +14,7 @@ from flexorch_mcp.tools import search as tools_search
 from flexorch_mcp.tools import export as tools_export
 from flexorch_mcp.tools import index as tools_index
 from flexorch_mcp.tools import chunks as tools_chunks
+from flexorch_mcp.tools import reprocess as tools_reprocess
 from flexorch_mcp.server import _run_check
 
 _BASE = "https://api.flexorch.com/v1"
@@ -111,6 +112,7 @@ class TestGetJobStatus:
         result = await tools_status.run(client, 1001)
         assert result["status"] == "completed"
         assert result["execution_id"] == 501
+        assert result["document_id"] == 501
         assert result["quality_grade"] == "A"
         assert result["quality_score"] == 91.0
         assert result["pii_found"] is True
@@ -184,6 +186,7 @@ class TestGetExtractionResult:
     async def test_execution_without_records_returns_metadata(self, client, mock_api):
         result = await tools_result.run(client, 501)
         assert result["execution_id"] == 501
+        assert result["document_id"] == 501
         assert result["document_type"] == "invoice"
         assert result["detected_language"] == "tr"
         assert result["quality"]["grade"] == "A"
@@ -458,6 +461,53 @@ class TestListChunks:
     async def test_chunks_pii_masked_only(self, client, mock_api):
         result = await tools_chunks.run(client, 89, pii_masked_only=True)
         assert result.get("isError") is None or result.get("isError") is False
+
+
+# ===========================================================================
+# Tool 9: reprocess_document
+# ===========================================================================
+
+
+class TestReprocessDocument:
+    @pytest.mark.asyncio
+    async def test_returns_job_id_and_poll_hint(self, client, mock_api):
+        result = await tools_reprocess.run(client, 501)
+        assert result["job_id"] == 1006
+        assert result["status"] == "queued"
+        assert "get_job_status(1006)" in result["poll_hint"]
+
+    @pytest.mark.asyncio
+    async def test_with_pipeline_config_passes_payload(self, client, mock_api):
+        result = await tools_reprocess.run(client, 501, pipeline_config={"document_type_hint": "invoice"})
+        assert result["job_id"] == 1006
+
+    @pytest.mark.asyncio
+    async def test_file_not_available_returns_friendly_error(self, client):
+        with respx.mock(base_url=_BASE, assert_all_called=False) as router:
+            router.post("/documents/9999/reprocess").mock(
+                return_value=httpx.Response(
+                    400,
+                    json={"error": {"code": "DOCUMENT_FILE_NOT_AVAILABLE", "message": "not available"}},
+                )
+            )
+            result = await tools_reprocess.run(client, 9999)
+
+        assert result.get("isError") is True
+        assert "no longer available" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_not_found_returns_friendly_error(self, client):
+        with respx.mock(base_url=_BASE, assert_all_called=False) as router:
+            router.post("/documents/9999/reprocess").mock(
+                return_value=httpx.Response(
+                    404,
+                    json={"error": {"code": "DOCUMENT_NOT_FOUND", "message": "not found"}},
+                )
+            )
+            result = await tools_reprocess.run(client, 9999)
+
+        assert result.get("isError") is True
+        assert "document_id" in result["error"]
 
 
 # ===========================================================================

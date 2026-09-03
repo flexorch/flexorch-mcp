@@ -1,7 +1,7 @@
 {
   "serverInfo": {
     "name": "flexorch-mcp",
-    "version": "0.2.3"
+    "version": "0.2.4"
   },
   "authentication": {
     "required": true,
@@ -56,6 +56,7 @@
           "job_id": {"type": "integer"},
           "status": {"type": "string"},
           "execution_id": {"type": "integer"},
+          "document_id": {"type": "integer", "description": "ID of the source document — pass to document.reprocess to re-run the pipeline on it"},
           "dataset_id": {"type": "integer"},
           "dataset_name": {"type": "string"},
           "row_count": {"type": "integer"},
@@ -96,6 +97,7 @@
         "type": "object",
         "properties": {
           "execution_id": {"type": "integer"},
+          "document_id": {"type": "integer", "description": "ID of the source document — pass to document.reprocess to re-run the pipeline on it"},
           "document_type": {"type": "string"},
           "detected_language": {"type": "string"},
           "quality": {"type": "object"},
@@ -277,6 +279,36 @@
         "title": "List RAG Chunks",
         "readOnlyHint": true,
         "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "document.reprocess",
+      "title": "Reprocess Document",
+      "description": "Re-queue an already-uploaded document through the pipeline — e.g. after a document_type_hint change, without re-uploading the file. Returns job_id; poll job.status the same way as after document.process. Only works for locally-stored files.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "document_id": {"type": "integer", "description": "ID of a previously processed document (from job.status or job.result)"},
+          "pipeline_config": {"type": "object", "description": "Optional pipeline config overrides, e.g. {\"document_type_hint\": \"invoice\"}"}
+        },
+        "required": ["document_id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "job_id": {"type": "integer"},
+          "status": {"type": "string"},
+          "poll_hint": {"type": "string"},
+          "isError": {"type": "boolean"},
+          "error": {"type": "string"}
+        }
+      },
+      "annotations": {
+        "title": "Reprocess Document",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
         "openWorldHint": false
       }
     }

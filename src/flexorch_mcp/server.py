@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict
 from .client import FlexOrchMCPClient
 from .errors import FlexOrchAPIError
 from .tools import process as tools_process
+from .tools import reprocess as tools_reprocess
 from .tools import status as tools_status
 from .tools import result as tools_result
 from .tools import build as tools_build
@@ -38,10 +39,17 @@ class ProcessDocumentResult(_Base):
     poll_hint: str | None = None
 
 
+class ReprocessDocumentResult(_Base):
+    job_id: int | None = None
+    status: str | None = None
+    poll_hint: str | None = None
+
+
 class JobStatusResult(_Base):
     job_id: int | None = None
     status: str | None = None
     execution_id: int | None = None
+    document_id: int | None = None
     dataset_id: int | None = None
     dataset_name: str | None = None
     row_count: int | None = None
@@ -50,6 +58,7 @@ class JobStatusResult(_Base):
     pii_found: bool | None = None
     pii_masked: bool | None = None
     pii_count: int | None = None
+    pii_type_summary: dict[str, int] = {}
     has_dataset: bool | None = None
     degraded: bool | None = None
     stage: str | None = None
@@ -66,10 +75,12 @@ class _QualityInfo(_Base):
 class _PrivacyInfo(_Base):
     pii_findings_count: int = 0
     pii_masked: bool = False
+    pii_type_summary: dict[str, int] = {}
 
 
 class ExtractionResult(_Base):
     execution_id: int | None = None
+    document_id: int | None = None
     document_type: str | None = None
     detected_language: str | None = None
     quality: _QualityInfo | None = None
@@ -455,6 +466,44 @@ async def list_chunks(
         _get_client(), dataset_id, min_quality, pii_masked_only, page, page_size
     )
     return ChunksResult.model_validate(data)
+
+
+# ---------------------------------------------------------------------------
+# Tool 9: reprocess_document
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="document.reprocess",
+    title="Reprocess Document",
+    annotations=ToolAnnotations(
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False,
+    ),
+    structured_output=True,
+)
+async def reprocess_document(
+    document_id: int,
+    pipeline_config: dict[str, Any] | None = None,
+) -> ReprocessDocumentResult:
+    """Re-queue an already-uploaded document through the pipeline.
+
+    Use this to re-run extraction/PII detection/quality scoring on a document you've
+    already processed — e.g. after a document_type_hint change, without downloading and
+    re-uploading the original file. Returns immediately with a job_id — poll with
+    job.status the same way as after document.process.
+
+    Only works for documents whose original file is still stored on the server (locally
+    uploaded, not connector-sourced). If the file is no longer available, re-upload it
+    with document.process instead.
+
+    Args:
+        document_id: ID of a previously processed document.
+        pipeline_config: Optional pipeline config overrides, e.g. {"document_type_hint": "invoice"}.
+    """
+    data = await tools_reprocess.run(_get_client(), document_id, pipeline_config)
+    return ReprocessDocumentResult.model_validate(data)
 
 
 # ---------------------------------------------------------------------------

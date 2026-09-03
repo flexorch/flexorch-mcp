@@ -25,6 +25,7 @@ _JOB_COMPLETED = {
         "error": None,
         "processing_summary": {
             "execution_id": 501,
+            "document_id": 501,
             "quality": {"grade": "A", "score": 91.0, "warnings": []},
             "privacy": {"pii_findings_count": 2, "privacy_applied": True, "masked_record_count": 2},
             "row_count": 12,
@@ -162,6 +163,7 @@ _EXECUTION_NO_DATASET = {
     "status": "success",
     "data": {
         "id": 501,
+        "document_id": 501,
         "status": "completed",
         "degraded": False,
         "result_meta": {
@@ -295,6 +297,24 @@ def mock_api():
                         "reference_id": 89,
                     },
                     "meta": {"poll": "/v1/jobs/1004"},
+                    "error": None,
+                },
+            )
+        )
+
+        # POST /documents/501/reprocess
+        router.post("/documents/501/reprocess").mock(
+            return_value=httpx.Response(
+                202,
+                json={
+                    "status": "accepted",
+                    "data": {
+                        "job_id": 1006,
+                        "job_type": "data_process",
+                        "status": "queued",
+                        "document_id": 501,
+                    },
+                    "meta": {"poll": "/v1/jobs/1006"},
                     "error": None,
                 },
             )

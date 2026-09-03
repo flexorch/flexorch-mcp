@@ -4,6 +4,17 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.4] — 2026-09-03
+
+### Added
+- **New tool: `document.reprocess`.** Re-queues an already-uploaded document through the pipeline without re-downloading/re-uploading the original file — mirrors `POST /documents/{id}/reprocess`, which `flexorch-sdk`/`flexorch-sdk-js` already exposed as `Document.reprocess()` but MCP had no equivalent for. Returns a `job_id` to poll with the existing `job.status` tool, same as `document.process`.
+- `job.status` and `job.result` now include `document_id`, needed to actually use the new `document.reprocess` tool (neither response surfaced it before, even though the API always had it).
+
+### Fixed
+- **(companion `flexorch-core` fix, 2026-09-03)** Content-hash dedup could point a re-upload at a job whose original file no longer exists — `tempfile.gettempdir()` is not persistent across container redeploys, so a "duplicate" upload could get silently routed to a permanently dead job (the same one `document.reprocess` would then also fail against with `DOCUMENT_FILE_NOT_AVAILABLE`). Dedup now checks the existing file is actually still on disk before treating an upload as a duplicate; if it's gone, the freshly uploaded copy is used to genuinely reprocess.
+
+---
+
 ## [0.2.3] — 2026-09-03
 
 ### Added
