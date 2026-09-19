@@ -131,7 +131,7 @@ class ChunksResult(_Base):
     page_size: int | None = None
     has_more: bool | None = None
 
-_TOOLS_COUNT = 8
+_TOOLS_COUNT = 9
 
 # HTTP mode: API key set per-request by _APIKeyMiddleware.
 # stdio mode: empty string — _get_client() falls back to env var singleton.

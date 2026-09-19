@@ -4,6 +4,13 @@ All notable changes to `flexorch-mcp` are documented here.
 
 ---
 
+## [0.2.6] — 2026-09-19
+
+### Fixed
+- **`_TOOLS_COUNT` was stale at `8`.** The `document.reprocess` tool added in 0.2.4 brought the real tool count to 9, but the diagnostic constant used in the startup banner (`Tools : N registered`) was never bumped alongside it.
+
+---
+
 ## [0.2.5] — 2026-09-03
 
 ### Fixed
