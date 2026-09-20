@@ -6,10 +6,19 @@ from typing import Any
 import httpx
 
 from .errors import FlexOrchAPIError, DownloadError, FileTooLargeError, map_api_error  # noqa: F401
+from .ssrf_guard import reject_private_target
 
 _BASE_URL = "https://api.flexorch.com/v1"
 _MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 _CHUNK_SIZE = 65536
+
+
+async def _check_request_target(request: httpx.Request) -> None:
+    """httpx 'request' event hook — fires before the initial request AND
+    before following each redirect hop, so a redirect-based SSRF (public IP
+    on the first response, private IP after a redirect) is caught too, not
+    just the URL the caller originally supplied."""
+    reject_private_target(request.url.host)
 
 
 def _mask_key(key: str) -> str:
@@ -44,6 +53,7 @@ class FlexOrchMCPClient:
             max_redirects=3,
             verify=True,
             follow_redirects=True,
+            event_hooks={"request": [_check_request_target]},
         )
 
     # ------------------------------------------------------------------
